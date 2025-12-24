@@ -1,3 +1,12 @@
+<!--
+ * @Author: 轻语 243267674@qq.com
+ * @Date: 2025-12-23 09:26:27
+ * @LastEditors: 轻语 243267674@qq.com
+ * @LastEditTime: 2025-12-24 11:29:42
+ * @FilePath: /flutter_todolist/README.md
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+-->
+
 # flutter_todolist
 
 A new Flutter project.
@@ -58,4 +67,3 @@ flutter run -d "iPhone 15"
 ## 热重载
 
 运行后按 `r` 热重载，按 `R` 热重启，按 `q` 退出。
-
