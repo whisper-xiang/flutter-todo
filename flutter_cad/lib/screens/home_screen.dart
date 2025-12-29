@@ -2,9 +2,19 @@
  * @Author: 轻语 243267674@qq.com
  * @Date: 2025-12-24 15:37:54
  * @LastEditors: 轻语
- * @LastEditTime: 2025-12-25 14:24:38
+ * @LastEditTime: 2025-12-29 13:13:20
  */
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+
+import '../models/cad_file.dart';
+
+class _DwgAsset {
+  final String name;
+  final String assetPath;
+
+  const _DwgAsset({required this.name, required this.assetPath});
+}
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -88,6 +98,12 @@ class _FilesTab extends StatelessWidget {
 
   const _FilesTab({required this.scaffoldKey});
 
+  static const List<_DwgAsset> _dwgAssets = [
+    _DwgAsset(name: '电磁铁.dwg', assetPath: 'assets/dwg/电磁铁.dwg'),
+    _DwgAsset(name: '电磁铁座.dwg', assetPath: 'assets/dwg/电磁铁座.dwg'),
+    _DwgAsset(name: '销轴.dwg', assetPath: 'assets/dwg/销轴.dwg'),
+  ];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -102,12 +118,13 @@ class _FilesTab extends StatelessWidget {
         ),
       ),
       body: ListView.builder(
-        itemCount: 10,
+        itemCount: _dwgAssets.length,
         itemBuilder: (context, index) {
+          final item = _dwgAssets[index];
           return ListTile(
             leading: const Icon(Icons.insert_drive_file),
-            title: Text('文件 ${index + 1}'),
-            subtitle: const Text('大小: 2.5 MB'),
+            title: Text(item.name),
+            subtitle: Text(item.assetPath),
             trailing: IconButton(
               icon: const Icon(Icons.more_vert),
               onPressed: () {
@@ -115,7 +132,17 @@ class _FilesTab extends StatelessWidget {
               },
             ),
             onTap: () {
-              // Open file
+              final file = CadFile(
+                id: 'asset-$index',
+                name: item.name,
+                path: item.assetPath,
+                url: null,
+                type: FileType.cad2d,
+                modifiedAt: DateTime.now(),
+                size: 0,
+              );
+
+              context.push('/preview/${file.id}', extra: file);
             },
           );
         },

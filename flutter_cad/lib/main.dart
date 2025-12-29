@@ -1,9 +1,8 @@
 /*
  * @Author: 轻语 243267674@qq.com
  * @Date: 2025-12-24 15:33:42
- * @LastEditors: 轻语 243267674@qq.com
- * @LastEditTime: 2025-12-24 15:46:05
- * @FilePath: /flutter_cad/lib/main.dart
+ * @LastEditors: 轻语
+ * @LastEditTime: 2025-12-29 09:35:59
  */
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';

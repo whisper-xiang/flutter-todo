@@ -19,32 +19,35 @@ class _PreviewScreenState extends State<PreviewScreen> {
   @override
   void initState() {
     super.initState();
-    
+
     // In a real app, you would load different viewers based on file type.
     // For 3D CAD, usually a WebGL viewer url.
     // Here we use a placeholder that demonstrates 2-way communication.
-    
+
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(const Color(0x00000000))
       ..setNavigationDelegate(
         NavigationDelegate(
-          onPageStarted: (String url) {},
-          onPageFinished: (String url) {
-            setState(() => _isLoading = false);
+          onNavigationRequest: (request) {
+            return NavigationDecision.navigate;
           },
-          onWebResourceError: (WebResourceError error) {},
+          onPageFinished: (url) {
+            if (mounted) {
+              setState(() {
+                _isLoading = false;
+              });
+            }
+          },
         ),
       )
       ..addJavaScriptChannel(
-        'FlutterChannel',
-        onMessageReceived: (JavaScriptMessage message) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Received from JS: ${message.message}')),
-          );
+        'ConsoleChannel',
+        onMessageReceived: (message) {
+          debugPrint('JS 👉 ${message.message}');
         },
       )
-      ..loadHtmlString(_getHtmlContent(widget.file.name));
+      ..loadRequest(Uri.parse('http://127.0.0.1:5500/assets/web/index.html'));
   }
 
   @override
@@ -57,7 +60,9 @@ class _PreviewScreenState extends State<PreviewScreen> {
             icon: const Icon(Icons.message),
             onPressed: () {
               // Send message to WebView
-              _controller.runJavaScript('receiveFromFlutter("Hello from Flutter!");');
+              _controller.runJavaScript(
+                'receiveFromFlutter("Hello from Flutter!");',
+              );
             },
             tooltip: 'Send Message to WebView',
           ),
@@ -66,8 +71,7 @@ class _PreviewScreenState extends State<PreviewScreen> {
       body: Stack(
         children: [
           WebViewWidget(controller: _controller),
-          if (_isLoading)
-            const Center(child: CircularProgressIndicator()),
+          if (_isLoading) const Center(child: CircularProgressIndicator()),
         ],
       ),
     );
@@ -79,6 +83,8 @@ class _PreviewScreenState extends State<PreviewScreen> {
       <html>
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <script>window.filename = '$filename';</script>
+        <script src="js/viewer.js"></script>
         <style>
           body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; background: #f0f0f0; }
           .viewer { width: 90%; height: 60%; background: #333; color: white; display: flex; align-items: center; justify-content: center; border-radius: 8px; }
@@ -94,22 +100,9 @@ class _PreviewScreenState extends State<PreviewScreen> {
         </div>
         
         <div id="log">Waiting for Flutter...</div>
-        
         <button onclick="sendMessage()">Send Info to Flutter</button>
-
-        <script>
-          function sendMessage() {
-            if (window.FlutterChannel) {
-              FlutterChannel.postMessage('Viewer initialized for ' + '$filename');
-            }
-          }
-          
-          function receiveFromFlutter(message) {
-            document.getElementById('log').innerText = 'Flutter says: ' + message;
-          }
-        </script>
       </body>
-      </html>
+    </html>
     ''';
   }
 }

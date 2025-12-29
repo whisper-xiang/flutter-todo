@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- console 劫持（必须在 viewer.js 之前） -->
+  <!-- <script>
+    (function () {
+      function send(level, args) {
+        ConsoleChannel.postMessage(
+          JSON.stringify({
+            level,
+            message: args.map(a =>
+              typeof a === 'object' ? JSON.stringify(a) : String(a)
+            ).join(' ')
+          })
+        );
+      }
+
+      ['log', 'warn', 'error', 'info'].forEach(level => {
+        const old = console[level];
+        console[level] = function (...args) {
+          send(level, args);
+          old.apply(console, args);
+        };
+      });
+    })();
+  </script> -->
+
+  <!-- 外部 JS -->
+  <script src="./js/viewer.js"></script>
+</head>
+
+<body>
+  <h2>CAD Viewer</h2>
+  <div id="viewer">Waiting111..22121 222.</div>
+</body>
+</html>
