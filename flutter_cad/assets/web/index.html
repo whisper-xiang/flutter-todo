@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- console 劫持（必须在 viewer.js 之前） -->
-  <!-- <script>
+    <!-- console 劫持（必须在 viewer.js 之前） -->
+    <!-- <script>
     (function () {
       function send(level, args) {
         ConsoleChannel.postMessage(
@@ -27,12 +27,26 @@
     })();
   </script> -->
 
-  <!-- 外部 JS -->
-  <script src="./js/viewer.js"></script>
-</head>
+    <!-- 外部 JS -->
+    <script src="./js/totp.js"></script>
+    <script src="./js/helper.js"></script>
+    <script src="./js/viewer.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+      }
+      .flash-content {
+        width: 100%;
+        height: 100vh;
+        overflow: hidden;
+        background-color: #000000;
+        position: relative;
+      }
+    </style>
+  </head>
 
-<body>
-  <h2>CAD Viewer</h2>
-  <div id="viewer">Waiting111..22121 222.</div>
-</body>
+  <body>
+    <div id="flashContent" class="flash-content"></div>
+  </body>
 </html>
