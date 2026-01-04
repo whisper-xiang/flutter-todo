@@ -36,21 +36,22 @@ const drawInfo = {
   type: "2d",
 };
 
-const getOcfData = (ocfUrl) => {
-  // 根据ocfUrl获取ocf二进制数据
-  const ocfData = fetch(ocfUrl, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/octet-stream",
-    },
-  })
-    .then((res) => {
-      return res.arrayBuffer();
-    })
-    .catch((err) => {
-      return null;
+const getOcfData = async (ocfUrl) => {
+  try {
+    const res = await fetch(ocfUrl, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/octet-stream",
+      },
     });
-  return ocfData;
+    const ocfData = await res.arrayBuffer();
+    console.log(ocfData.byteLength); // 输出 byteLength
+    console.log(ocfData); // 检查实际的 ArrayBuffer 内容
+    return ocfData;
+  } catch (err) {
+    console.error("Error fetching data:", err);
+    return null;
+  }
 };
 
 const switchLayout = async (data) => {
@@ -58,10 +59,16 @@ const switchLayout = async (data) => {
     const { ocfPath, fileId } = drawInfo;
     const layoutInfo = ocfPath.find((item) => item.layout === data.globalName);
     const bufferData = await getOcfData(layoutInfo.ocfUrl);
+    console.log("bufferData", bufferData);
+    if (!bufferData) {
+      ElMessage.error("获取2D文件失败！");
+      sdk2dInstance.Tips.closeProgress();
+      return;
+    }
 
+    console.log("switchLayout", bufferData, fileId, sdk2dInstance);
     await sdk2dInstance.render("ocf", bufferData, fileId, true);
-
-    const position = coordinate.value?.find((item) => item.fileId === fileId);
+    const position = coordinate?.find((item) => item.fileId === fileId);
     if (position) {
       setDWGPreviewRange(position);
     }
@@ -115,6 +122,7 @@ const show2dDrawing = async () => {
       sdk2dInstance.enablePan(1.0);
       try {
         const code = TOTPGenerator.getTOTP();
+        console.log("code", code);
         // 渲染前需要先进行授权验证
         sdk2dInstance.setDynamicPW(code); // 前端授权验证
       } catch (error) {
@@ -124,10 +132,12 @@ const show2dDrawing = async () => {
 
     console.log("2D图纸", drawInfo);
     const { ocfPath } = drawInfo;
+    console.log("ocfPath", ocfPath);
     if (Array.isArray(ocfPath) && ocfPath.length > 0) {
       const layoutInfo = ocfPath.find((item) =>
         /model.*space/i.test(item.layout || "")
       );
+      console.log("layoutInfo", layoutInfo.layout);
       if (layoutInfo) {
         await switchLayout({ globalName: layoutInfo.layout, nickName: "" });
       } else {

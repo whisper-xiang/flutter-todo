@@ -47,7 +47,9 @@ class _PreviewScreenState extends State<PreviewScreen> {
           debugPrint('JS 👉 ${message.message}');
         },
       )
-      ..loadRequest(Uri.parse('http://127.0.0.1:5500/assets/web/index.html'));
+      ..loadRequest(
+        Uri.parse('http://localhost:5500/assets/web/demo/site.html'),
+      );
   }
 
   @override
