@@ -2,19 +2,18 @@
  * @Author: 轻语 243267674@qq.com
  * @Date: 2025-12-24 15:38:42
  * @LastEditors: 轻语
- * @LastEditTime: 2025-12-25 16:42:00
+ * @LastEditTime: 2026-01-04 15:22:20
  * @FilePath: /flutter_cad/lib/router.dart
  */
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'providers/auth_provider.dart';
 import 'models/cad_file.dart';
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
-import 'screens/file_list_screen.dart';
-import 'screens/local_file_screen.dart';
+import 'screens/cloud_files_screen.dart';
+import 'screens/local_files_screen.dart';
 import 'screens/preview_screen.dart';
 
 final router = GoRouter(
@@ -40,14 +39,14 @@ final router = GoRouter(
       pageBuilder: (context, state) => CupertinoPage(child: const HomeScreen()),
     ),
     GoRoute(
-      path: '/files',
-      pageBuilder: (context, state) =>
-          CupertinoPage(child: const FileListScreen()),
-    ),
-    GoRoute(
       path: '/local',
       pageBuilder: (context, state) =>
-          CupertinoPage(child: const LocalFileScreen()),
+          CupertinoPage(child: const LocalFilesScreen()),
+    ),
+    GoRoute(
+      path: '/cloud',
+      pageBuilder: (context, state) =>
+          CupertinoPage(child: const CloudFilesScreen()),
     ),
     GoRoute(
       path: '/preview/:id',

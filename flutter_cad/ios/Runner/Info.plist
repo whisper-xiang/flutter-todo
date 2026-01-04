@@ -45,5 +45,13 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSDocumentsFolderUsageDescription</key>
+	<string>此应用需要访问文档文件夹以读取和保存CAD文件</string>
+	<key>NSDesktopFolderUsageDescription</key>
+	<string>此应用需要访问桌面文件夹以读取和保存CAD文件</string>
+	<key>NSDownloadsFolderUsageDescription</key>
+	<string>此应用需要访问下载文件夹以读取和保存CAD文件</string>
+	<key>NSPhotosLibraryUsageDescription</key>
+	<string>此应用需要访问照片库以导入图片文件</string>
 </dict>
 </plist>

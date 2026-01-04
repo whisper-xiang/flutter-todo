@@ -4,14 +4,14 @@ import 'package:go_router/go_router.dart';
 import '../providers/file_provider.dart';
 import '../models/cad_file.dart';
 
-class FileListScreen extends StatefulWidget {
-  const FileListScreen({super.key});
+class CloudFilesScreen extends StatefulWidget {
+  const CloudFilesScreen({super.key});
 
   @override
-  State<FileListScreen> createState() => _FileListScreenState();
+  State<CloudFilesScreen> createState() => _CloudFilesScreenState();
 }
 
-class _FileListScreenState extends State<FileListScreen> {
+class _CloudFilesScreenState extends State<CloudFilesScreen> {
   @override
   void initState() {
     super.initState();
@@ -43,7 +43,9 @@ class _FileListScreenState extends State<FileListScreen> {
               return ListTile(
                 leading: _buildIcon(file.type),
                 title: Text(file.name),
-                subtitle: Text('Size: ${(file.size / 1024 / 1024).toStringAsFixed(2)} MB'),
+                subtitle: Text(
+                  'Size: ${(file.size / 1024 / 1024).toStringAsFixed(2)} MB',
+                ),
                 trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                 onTap: () {
                   context.push('/preview/${file.id}', extra: file);

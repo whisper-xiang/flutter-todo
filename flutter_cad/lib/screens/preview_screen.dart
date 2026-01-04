@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'dart:io';
+import 'dart:convert';
 import '../models/cad_file.dart';
 
 class PreviewScreen extends StatefulWidget {
@@ -19,11 +21,10 @@ class _PreviewScreenState extends State<PreviewScreen> {
   @override
   void initState() {
     super.initState();
+    _initializeWebView();
+  }
 
-    // In a real app, you would load different viewers based on file type.
-    // For 3D CAD, usually a WebGL viewer url.
-    // Here we use a placeholder that demonstrates 2-way communication.
-
+  Future<void> _initializeWebView() async {
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(const Color(0x00000000))
@@ -37,6 +38,10 @@ class _PreviewScreenState extends State<PreviewScreen> {
               setState(() {
                 _isLoading = false;
               });
+              // 如果是本地文件，加载文件内容
+              if (widget.file.path != null) {
+                _loadLocalFile();
+              }
             }
           },
         ),
@@ -46,10 +51,48 @@ class _PreviewScreenState extends State<PreviewScreen> {
         onMessageReceived: (message) {
           debugPrint('JS 👉 ${message.message}');
         },
-      )
-      ..loadRequest(
-        Uri.parse('http://localhost:5500/assets/web/demo/site.html'),
       );
+
+    // 根据文件类型加载不同的内容
+    await _loadContent();
+  }
+
+  Future<void> _loadContent() async {
+    String url;
+
+    if (widget.file.path != null && widget.file.path!.startsWith('/')) {
+      // 本地文件 - 使用本地HTML文件
+      url = 'http://localhost:5500/assets/web/demo/site.html';
+    } else if (widget.file.url != null) {
+      // 远程文件
+      url = widget.file.url!;
+    } else {
+      // 默认演示页面
+      url = 'http://localhost:5500/assets/web/demo/site.html';
+    }
+
+    await _controller.loadRequest(Uri.parse(url));
+  }
+
+  Future<void> _loadLocalFile() async {
+    try {
+      if (widget.file.path != null) {
+        final file = File(widget.file.path!);
+        if (await file.exists()) {
+          final bytes = await file.readAsBytes();
+          final base64Data = base64Encode(bytes);
+
+          // 发送文件数据到WebView
+          await _controller.runJavaScript('''
+            if (window.loadLocalFile) {
+              window.loadLocalFile('${widget.file.name}', 'data:application/octet-stream;base64,$base64Data');
+            }
+          ''');
+        }
+      }
+    } catch (e) {
+      debugPrint('加载本地文件失败: $e');
+    }
   }
 
   @override
@@ -77,34 +120,5 @@ class _PreviewScreenState extends State<PreviewScreen> {
         ],
       ),
     );
-  }
-
-  String _getHtmlContent(String filename) {
-    return '''
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <script>window.filename = '$filename';</script>
-        <script src="js/viewer.js"></script>
-        <style>
-          body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; background: #f0f0f0; }
-          .viewer { width: 90%; height: 60%; background: #333; color: white; display: flex; align-items: center; justify-content: center; border-radius: 8px; }
-          button { padding: 10px 20px; font-size: 16px; margin-top: 20px; cursor: pointer; }
-          #log { margin-top: 20px; color: #666; }
-        </style>
-      </head>
-      <body>
-        <h2>CAD Viewer Demo</h2>
-        <p>File: $filename</p>
-        <div class="viewer">
-           [ 3D Model Placeholder ]
-        </div>
-        
-        <div id="log">Waiting for Flutter...</div>
-        <button onclick="sendMessage()">Send Info to Flutter</button>
-      </body>
-    </html>
-    ''';
   }
 }
