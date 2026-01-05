@@ -22,4 +22,10 @@ class AuthProvider extends ChangeNotifier {
     _isAuthenticated = false;
     notifyListeners();
   }
+
+  // 用于跳过登录直接设置认证状态的方法
+  void setAuthenticated(bool authenticated) {
+    _isAuthenticated = authenticated;
+    notifyListeners();
+  }
 }
