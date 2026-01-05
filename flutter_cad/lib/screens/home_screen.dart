@@ -2,7 +2,7 @@
  * @Author: 轻语 243267674@qq.com
  * @Date: 2025-12-24 15:37:54
  * @LastEditors: 轻语
- * @LastEditTime: 2026-01-04 16:21:15
+ * @LastEditTime: 2026-01-05 10:09:24
  */
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -59,14 +59,6 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Icon(Icons.person, size: 40, color: Colors.blue),
             ),
             decoration: BoxDecoration(color: Theme.of(context).primaryColor),
-          ),
-          ListTile(
-            leading: const Icon(Icons.storage),
-            title: const Text('本地文件'),
-            onTap: () {
-              Navigator.pop(context);
-              context.push('/local');
-            },
           ),
           ListTile(
             leading: const Icon(Icons.person),

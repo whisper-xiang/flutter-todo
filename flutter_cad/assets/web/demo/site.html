@@ -4,10 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Gstar-JS-SDK2 DEMO index</title>
-
-    <!-- CSS Styles -->
     <style>
-      /* Base styles */
       html,
       body {
         height: 100%;
@@ -19,7 +16,6 @@
         box-sizing: border-box;
       }
 
-      /* Layout */
       #wrap {
         width: 100%;
         height: 100%;
@@ -30,14 +26,9 @@
   <body>
     <div id="wrap"></div>
 
-    <!-- External SDK -->
     <script src="https://resource-cn.gstarcad.com/web-cn/prod/gstar-web-site/static/js/open-dwg/GStarSDK.js?2025-12-25%2022:34:06"></script>
 
     <script>
-      // ========================================
-      // Configuration
-      // ========================================
-
       const CONFIG = {
         apiHost: "https://cloud.gstarcad.com",
         fileId: "F19A9E840586B0DAB88B7C21556FAA9E",
@@ -47,14 +38,6 @@
         ],
       };
 
-      // ========================================
-      // TOTP/HMAC Library Functions
-      // ========================================
-      /**
-       * 获取基于时间的一次性密码 (TOTP)
-       * @param {string} secretKey - 密钥
-       * @returns {string} 生成的TOTP密码
-       */
       function getTOTP(secretKey) {
         const SecretKeybf = secretKey.substring(0, 11);
         const SecretKeybt = secretKey.substring(11, 18);
@@ -419,6 +402,20 @@
         toolbarHideItems: {},
         notesIsMesh: true,
         zoomBasic: 0.8,
+        permissionList: ["print", "savePDF", "noteArrow"],
+        asideShowIconList: [
+          "print",
+          "savePDF",
+          "noteArrow",
+          "noteGuideLine",
+          "noteImage",
+          "noteOval",
+          "noteStraightLine",
+          "noteWord",
+          "noteCustomizeLine",
+          "noteRectCloudLine",
+          "noteRectangle",
+        ],
 
         // // Callbacks
         // /**
