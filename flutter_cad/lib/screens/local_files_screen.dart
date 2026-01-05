@@ -103,7 +103,19 @@ class _LocalFilesScreenState extends State<LocalFilesScreen> {
         try {
           result = await fp.FilePicker.platform.pickFiles(
             type: fp.FileType.custom,
-            allowedExtensions: ['dwg', 'dxf', 'ocf', 'pdf', 'jpg', 'png'],
+            allowedExtensions: [
+              'dwg',
+              'dxf',
+              'ocf',
+              'pdf',
+              'jpg',
+              'png',
+              'doc',
+              'docx',
+              'txt',
+              'xls',
+              'xlsx',
+            ],
             allowMultiple: false,
           );
           debugPrint('方式2结果: ${result?.files.length ?? 0} 个文件');
@@ -258,8 +270,20 @@ class _LocalFilesScreenState extends State<LocalFilesScreen> {
         fileType = FileType.cad3d;
       } else if (['.pdf'].contains(extension)) {
         fileType = FileType.pdf;
-      } else {
+      } else if (['.doc', '.docx'].contains(extension)) {
+        fileType = FileType.unknown; // 可以添加新的文档类型
+      } else if (['.xls', 'xlsx'].contains(extension)) {
+        fileType = FileType.unknown; // 可以添加新的表格类型
+      } else if ([
+        '.jpg',
+        '.png',
+        '.gif',
+        '.bmp',
+        '.webp',
+      ].contains(extension)) {
         fileType = FileType.image;
+      } else {
+        fileType = FileType.unknown;
       }
 
       // 创建CadFile对象
@@ -493,6 +517,14 @@ class _LocalFilesScreenState extends State<LocalFilesScreen> {
       case '.jpg':
       case '.png':
         return Icon(Icons.image, size: 20);
+      case '.doc':
+      case '.docx':
+        return Icon(Icons.description, size: 20);
+      case '.txt':
+        return Icon(Icons.text_snippet, size: 20);
+      case '.xls':
+      case '.xlsx':
+        return Icon(Icons.table_chart, size: 20);
       default:
         return Icon(Icons.insert_drive_file, size: 20);
     }

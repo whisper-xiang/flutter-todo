@@ -2,7 +2,7 @@
  * @Author: 轻语 243267674@qq.com
  * @Date: 2025-12-24 15:37:54
  * @LastEditors: 轻语
- * @LastEditTime: 2026-01-05 13:30:48
+ * @LastEditTime: 2026-01-05 16:29:28
  */
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -19,15 +19,24 @@ class LocalFilesTab extends StatefulWidget {
   State<LocalFilesTab> createState() => _LocalFilesTabState();
 }
 
-class _LocalFilesTabState extends State<LocalFilesTab> {
+class _LocalFilesTabState extends State<LocalFilesTab>
+    with SingleTickerProviderStateMixin {
   final FileStorageService _storageService = FileStorageService.instance;
   List<File> _recentFiles = [];
   bool _isLoading = false;
+  late TabController _tabController;
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
     _loadRecentFiles();
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadRecentFiles() async {
@@ -52,10 +61,10 @@ class _LocalFilesTabState extends State<LocalFilesTab> {
     }
   }
 
-  Future<void> _openFileForPreview(File file) async {
+  Future<void> _openFileWithWebView(File file) async {
     final fileSize = await file.length();
     final fileName = file.path.split('/').last;
-    final fileId = 'local-${file.path.hashCode}';
+    final fileId = 'local-webview-${file.path.hashCode}';
 
     final cadFile = CadFile(
       id: fileId,
@@ -67,7 +76,26 @@ class _LocalFilesTabState extends State<LocalFilesTab> {
       size: fileSize,
     );
     if (mounted) {
-      context.push('/preview/$fileId', extra: cadFile);
+      context.push('/webview-preview/$fileId', extra: cadFile);
+    }
+  }
+
+  Future<void> _openFileWithNative(File file) async {
+    final fileSize = await file.length();
+    final fileName = file.path.split('/').last;
+    final fileId = 'local-native-${file.path.hashCode}';
+
+    final cadFile = CadFile(
+      id: fileId,
+      name: fileName,
+      path: file.path,
+      url: null,
+      type: FileType.cad2d,
+      modifiedAt: DateTime.now(),
+      size: fileSize,
+    );
+    if (mounted) {
+      context.push('/native-preview/$fileId', extra: cadFile);
     }
   }
 
@@ -89,53 +117,57 @@ class _LocalFilesTabState extends State<LocalFilesTab> {
             tooltip: '本地文件',
             onPressed: () => context.push('/local'),
           ),
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            tooltip: '刷新',
+            onPressed: () => _loadRecentFiles(),
+          ),
         ],
-      ),
-      body: Column(
-        children: [
-          if (_isLoading)
-            const Padding(
-              padding: EdgeInsets.all(16.0),
-              child: Center(child: CircularProgressIndicator()),
-            )
-          else if (_recentFiles.isNotEmpty) ...[
-            _buildRecentFilesHeader(),
-            ..._recentFiles.map(
-              (file) => ListTile(
-                leading: const Icon(Icons.insert_drive_file),
-                title: Text(file.path.split('/').last),
-                subtitle: Text('本地文件'),
-                trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                onTap: () => _openFileForPreview(file),
-              ),
-            ),
-            const Divider(),
+        bottom: TabBar(
+          controller: _tabController,
+          tabs: const [
+            Tab(icon: Icon(Icons.web), text: 'WebView渲染'),
+            Tab(icon: Icon(Icons.phone_android), text: 'Flutter原生'),
           ],
-          if (_recentFiles.isEmpty)
-            _buildEmptyState()
-          else
-            _buildContentState(),
+        ),
+      ),
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          _buildFileList(isWebView: true),
+          _buildFileList(isWebView: false),
         ],
       ),
     );
   }
 
-  Widget _buildRecentFilesHeader() {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          const Text(
-            '最近文件',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+  Widget _buildFileList({required bool isWebView}) {
+    if (_isLoading) {
+      return const Padding(
+        padding: EdgeInsets.all(16.0),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_recentFiles.isEmpty) {
+      return _buildEmptyState();
+    }
+
+    return Column(
+      children: [
+        ..._recentFiles.map(
+          (file) => ListTile(
+            leading: const Icon(Icons.insert_drive_file),
+            title: Text(file.path.split('/').last),
+            subtitle: Text(isWebView ? 'WebView渲染' : 'Flutter原生'),
+            trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+            onTap: () => isWebView
+                ? _openFileWithWebView(file)
+                : _openFileWithNative(file),
           ),
-          TextButton(
-            onPressed: () => context.push('/local'),
-            child: const Text('查看全部'),
-          ),
-        ],
-      ),
+        ),
+        const Divider(),
+      ],
     );
   }
 
@@ -154,29 +186,6 @@ class _LocalFilesTabState extends State<LocalFilesTab> {
             ElevatedButton(
               onPressed: () => context.push('/local'),
               child: const Text('管理本地文件'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildContentState() {
-    return Expanded(
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.folder, size: 64, color: Colors.teal),
-            const SizedBox(height: 16),
-            Text(
-              '已找到 ${_recentFiles.length} 个本地文件',
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () => context.push('/local'),
-              child: const Text('查看全部文件'),
             ),
           ],
         ),

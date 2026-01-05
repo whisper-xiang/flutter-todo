@@ -159,6 +159,11 @@ class FileStorageService {
                 '.pdf',
                 '.jpg',
                 '.png',
+                '.doc',
+                '.docx',
+                '.txt',
+                '.xls',
+                '.xlsx',
               ].contains(extension);
             }).toList();
 

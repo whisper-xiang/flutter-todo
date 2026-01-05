@@ -63,5 +63,27 @@ final router = GoRouter(
         );
       },
     ),
+    GoRoute(
+      path: '/webview-preview/:id',
+      pageBuilder: (context, state) {
+        final id = state.pathParameters['id']!;
+        // 通过 extra 传递文件对象，简化 demo 实现
+        final file = state.extra as CadFile;
+        return CupertinoPage(
+          child: PreviewScreen(id: id, file: file),
+        );
+      },
+    ),
+    GoRoute(
+      path: '/native-preview/:id',
+      pageBuilder: (context, state) {
+        final id = state.pathParameters['id']!;
+        // 通过 extra 传递文件对象，简化 demo 实现
+        final file = state.extra as CadFile;
+        return CupertinoPage(
+          child: PreviewScreen(id: id, file: file),
+        );
+      },
+    ),
   ],
 );
