@@ -2,7 +2,7 @@
  * @Author: 轻语 243267674@qq.com
  * @Date: 2025-12-24 15:38:42
  * @LastEditors: 轻语
- * @LastEditTime: 2026-01-05 11:14:32
+ * @LastEditTime: 2026-01-05 16:04:55
  * @FilePath: /flutter_cad/lib/router.dart
  */
 import 'package:go_router/go_router.dart';
@@ -11,7 +11,8 @@ import 'package:flutter/cupertino.dart';
 import 'providers/auth_provider.dart';
 import 'models/cad_file.dart';
 import 'screens/login_screen.dart';
-import 'screens/home_screen.dart';
+// import 'screens/home_screen.dart';
+import 'screens/home/index.dart';
 import 'screens/cloud_files_screen.dart';
 import 'screens/local_files_screen.dart';
 import 'screens/preview_screen.dart';
