@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
-import '../providers/auth_provider.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -185,15 +183,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         size: 20,
                       ),
                     ),
-                    onPressed: () {
-                      // 设置认证状态并跳转到home页面
-                      final authProvider = Provider.of<AuthProvider>(
-                        context,
-                        listen: false,
-                      );
-                      authProvider.setAuthenticated(true); // 设置为已认证状态
-                      context.go('/home');
-                    },
+                    onPressed: () => context.go('/home'),
                   ),
                 ],
               ),

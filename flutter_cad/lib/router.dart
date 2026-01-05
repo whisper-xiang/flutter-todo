@@ -2,7 +2,7 @@
  * @Author: 轻语 243267674@qq.com
  * @Date: 2025-12-24 15:38:42
  * @LastEditors: 轻语
- * @LastEditTime: 2026-01-04 15:22:20
+ * @LastEditTime: 2026-01-05 11:14:32
  * @FilePath: /flutter_cad/lib/router.dart
  */
 import 'package:go_router/go_router.dart';
@@ -23,10 +23,13 @@ final router = GoRouter(
     final isLoggedIn = authProvider.isAuthenticated;
     final isLoggingIn = state.uri.toString() == '/login';
 
-    if (!isLoggedIn && !isLoggingIn) return '/login';
-    if (isLoggedIn && isLoggingIn) return '/home';
+    // 移除强制登录验证，允许游客访问大多数页面
+    // 只有在特定需要认证的页面才进行重定向
+    if (isLoggingIn && isLoggedIn) {
+      return '/home'; // 已登录用户不应访问登录页
+    }
 
-    return null;
+    return null; // 允许所有其他访问
   },
   routes: [
     GoRoute(

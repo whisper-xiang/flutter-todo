@@ -2,13 +2,15 @@
  * @Author: 轻语 243267674@qq.com
  * @Date: 2025-12-24 15:37:54
  * @LastEditors: 轻语
- * @LastEditTime: 2026-01-05 10:09:24
+ * @LastEditTime: 2026-01-05 11:43:31
  */
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import '../models/cad_file.dart';
 import '../services/file_storage_service.dart';
+import '../providers/auth_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -36,6 +38,9 @@ class _HomeScreenState extends State<HomeScreen> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (index) => setState(() => _currentIndex = index),
+        selectedItemColor: Colors.teal,
+        unselectedItemColor: Colors.grey[600],
+        type: BottomNavigationBarType.fixed,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.folder), label: '本地文件'),
           BottomNavigationBarItem(icon: Icon(Icons.cloud), label: '云图'),
@@ -51,34 +56,125 @@ class _HomeScreenState extends State<HomeScreen> {
       child: ListView(
         padding: EdgeInsets.zero,
         children: [
-          UserAccountsDrawerHeader(
-            accountName: const Text('轻语'),
-            accountEmail: const Text('243267674@qq.com'),
-            currentAccountPicture: CircleAvatar(
-              backgroundColor: Colors.white,
-              child: Icon(Icons.person, size: 40, color: Colors.blue),
-            ),
-            decoration: BoxDecoration(color: Theme.of(context).primaryColor),
-          ),
-          ListTile(
-            leading: const Icon(Icons.person),
-            title: const Text('个人信息'),
-            onTap: () {
-              Navigator.pop(context);
+          Consumer<AuthProvider>(
+            builder: (context, authProvider, child) {
+              if (authProvider.isAuthenticated) {
+                // 已认证用户显示账号信息
+                return UserAccountsDrawerHeader(
+                  accountName: const Text('轻语'),
+                  accountEmail: const Text('243267674@qq.com'),
+                  currentAccountPicture: CircleAvatar(
+                    backgroundColor: Colors.white,
+                    child: Icon(
+                      Icons.person,
+                      size: 40,
+                      color: Colors.teal[700],
+                    ),
+                  ),
+                  decoration: BoxDecoration(color: Colors.teal),
+                );
+              } else {
+                // 未认证用户显示登录按钮
+                return Container(
+                  height: 160,
+                  decoration: BoxDecoration(color: Colors.teal),
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            children: [
+                              Icon(
+                                Icons.account_circle,
+                                size: 60,
+                                color: Colors.white.withOpacity(0.8),
+                              ),
+                              const SizedBox(width: 16),
+                              ElevatedButton(
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                  context.go('/login');
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.white,
+                                  foregroundColor: Colors.teal,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 24,
+                                    vertical: 8,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                ),
+                                child: const Text(
+                                  '点击登录',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }
             },
           ),
-          ListTile(
-            leading: const Icon(Icons.settings),
-            title: const Text('设置'),
-            onTap: () {
-              Navigator.pop(context);
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.logout),
-            title: const Text('退出登录'),
-            onTap: () {
-              Navigator.pop(context);
+          // 菜单项也根据认证状态显示
+          Consumer<AuthProvider>(
+            builder: (context, authProvider, child) {
+              return Column(
+                children: [
+                  if (authProvider.isAuthenticated) ...[
+                    ListTile(
+                      leading: const Icon(Icons.person),
+                      title: const Text('个人信息'),
+                      onTap: () {
+                        Navigator.pop(context);
+                      },
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.settings),
+                      title: const Text('设置'),
+                      onTap: () {
+                        Navigator.pop(context);
+                      },
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.logout),
+                      title: const Text('退出登录'),
+                      onTap: () {
+                        Navigator.pop(context);
+                        authProvider.logout();
+                        context.go('/login');
+                      },
+                    ),
+                  ] else ...[
+                    ListTile(
+                      leading: const Icon(Icons.login),
+                      title: const Text('登录账号'),
+                      onTap: () {
+                        Navigator.pop(context);
+                        context.go('/login');
+                      },
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.info),
+                      title: const Text('关于应用'),
+                      onTap: () {
+                        Navigator.pop(context);
+                      },
+                    ),
+                  ],
+                ],
+              );
             },
           ),
         ],
@@ -156,7 +252,7 @@ class _LocalFilesTabState extends State<_LocalFilesTab> {
         title: const Text('本地文件'),
         leading: IconButton(
           icon: const CircleAvatar(
-            backgroundColor: Colors.blue,
+            backgroundColor: Colors.teal,
             child: Icon(Icons.person, color: Colors.white, size: 20),
           ),
           onPressed: () => widget.scaffoldKey.currentState?.openDrawer(),
@@ -233,7 +329,7 @@ class _LocalFilesTabState extends State<_LocalFilesTab> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.folder, size: 64, color: Colors.blue),
+                    Icon(Icons.folder, size: 64, color: Colors.teal),
                     const SizedBox(height: 16),
                     Text(
                       '已找到 ${_recentFiles.length} 个本地文件',
@@ -269,7 +365,7 @@ class _CloudFilesTab extends StatelessWidget {
         title: const Text('云图'),
         leading: IconButton(
           icon: const CircleAvatar(
-            backgroundColor: Colors.blue,
+            backgroundColor: Colors.teal,
             child: Icon(Icons.person, color: Colors.white, size: 20),
           ),
           onPressed: () => scaffoldKey.currentState?.openDrawer(),
@@ -310,7 +406,7 @@ class _ProfileTab extends StatelessWidget {
         title: const Text('我的'),
         leading: IconButton(
           icon: const CircleAvatar(
-            backgroundColor: Colors.blue,
+            backgroundColor: Colors.teal,
             child: Icon(Icons.person, color: Colors.white, size: 20),
           ),
           onPressed: () => scaffoldKey.currentState?.openDrawer(),
