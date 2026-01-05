@@ -1,15 +1,53 @@
 import '../models/cad_file.dart';
 
 class MockService {
+  void _logNetwork(
+    String method,
+    String url, {
+    Map<String, dynamic>? data,
+    int? statusCode,
+    String? response,
+  }) {
+    print('🌐 ──────────────────────────────────');
+    print('📡 $method $url');
+    if (data != null) {
+      print('📦 Request Data: $data');
+    }
+    if (statusCode != null) {
+      print('📊 Status: $statusCode');
+    }
+    if (response != null) {
+      print('📄 Response: $response');
+    }
+    print('⏰ Time: ${DateTime.now()}');
+    print('──────────────────────────────────');
+  }
+
   Future<bool> login(String email, String password) async {
+    final url = 'https://api.example.com/login';
+    _logNetwork('POST', url, data: {'email': email, 'password': '***'});
+
     // Simulate network delay
     await Future.delayed(const Duration(seconds: 1));
-    return email.isNotEmpty && password.isNotEmpty;
+
+    final result = email.isNotEmpty && password.isNotEmpty;
+    _logNetwork(
+      'POST',
+      url,
+      statusCode: result ? 200 : 401,
+      response: result ? 'Login successful' : 'Login failed',
+    );
+
+    return result;
   }
 
   Future<List<CadFile>> getFiles() async {
+    final url = 'https://api.example.com/files';
+    _logNetwork('GET', url);
+
     await Future.delayed(const Duration(seconds: 1));
-    return [
+
+    final files = [
       CadFile(
         id: '1',
         name: 'FloorPlan_Level1.dwg',
@@ -35,10 +73,26 @@ class MockService {
         size: 1024 * 500, // 500KB
       ),
     ];
+
+    _logNetwork(
+      'GET',
+      url,
+      statusCode: 200,
+      response: 'Found ${files.length} files',
+    );
+
+    return files;
   }
 
   Future<bool> uploadFile(String path) async {
+    final url = 'https://api.example.com/upload';
+    _logNetwork('POST', url, data: {'file': path});
+
     await Future.delayed(const Duration(seconds: 2));
-    return true;
+
+    final result = true;
+    _logNetwork('POST', url, statusCode: 200, response: 'Upload successful');
+
+    return result;
   }
 }
