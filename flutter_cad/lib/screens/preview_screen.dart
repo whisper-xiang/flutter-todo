@@ -60,6 +60,7 @@ class _PreviewScreenState extends State<PreviewScreen> {
   Future<void> _loadContent() async {
     String url;
     final fileExtension = widget.file.name.split('.').last.toLowerCase();
+    debugPrint('文件扩展名: $fileExtension');
 
     if (widget.file.path != null && widget.file.path!.startsWith('/')) {
       // 本地文件 - 根据文件类型选择不同的webview内容
@@ -101,11 +102,15 @@ class _PreviewScreenState extends State<PreviewScreen> {
         // Word文档 - 创建简单的HTML预览
         try {
           if (fileExtension == 'docx') {
-            // 对于.docx文件，尝试读取为ZIP文件并提取文本
+            // 对于.docx文件，显示文件信息
             await _loadDocxContent();
-          } else {
-            // 对于.doc文件，显示信息页面
-            await _showDocInfoPage();
+          } else if (fileExtension == 'doc') {
+            // 对于.doc文件，使用阿里云盘WebView页面
+            url =
+                'https://whisper-xiang.github.io/paper-directory/%E5%AD%A6%E6%9C%AF%E8%AE%BA%E6%96%87%E5%9E%8B%E6%AF%95%E4%B8%9A%E8%AE%BA%E6%96%87%E6%92%B0%E5%86%99%E6%8C%87%E5%8D%97(%E6%B3%95%E5%AD%A6%E7%B1%BB%E9%80%82%E7%94%A8).pdf';
+            debugPrint('DOC文件URL:~~~~~ $url');
+            await _controller.loadRequest(Uri.parse(url));
+            return;
           }
           return;
         } catch (e) {
@@ -134,7 +139,7 @@ class _PreviewScreenState extends State<PreviewScreen> {
       // 默认演示页面
       url = 'http://localhost:5500/assets/web/demo/site.html';
     }
-
+    debugPrint('加载URL:~~~~~ $url');
     await _controller.loadRequest(Uri.parse(url));
   }
 
@@ -178,7 +183,7 @@ class _PreviewScreenState extends State<PreviewScreen> {
   }
 
   Future<void> _loadDocxContent() async {
-    // 简化的DOCX处理 - 显示文件信息而不是内容
+    // 对于.docx文件，显示文件信息
     await _showDocInfoPage();
   }
 

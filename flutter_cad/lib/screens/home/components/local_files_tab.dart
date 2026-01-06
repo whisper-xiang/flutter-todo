@@ -2,7 +2,7 @@
  * @Author: 轻语 243267674@qq.com
  * @Date: 2025-12-24 15:37:54
  * @LastEditors: 轻语
- * @LastEditTime: 2026-01-05 16:29:28
+ * @LastEditTime: 2026-01-06 14:23:58
  */
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -30,6 +30,7 @@ class _LocalFilesTabState extends State<LocalFilesTab>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _tabController.index = 1; // 默认选中Flutter原生标签（索引1）
     _loadRecentFiles();
   }
 
