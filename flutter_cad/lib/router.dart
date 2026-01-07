@@ -16,6 +16,7 @@ import 'screens/home/index.dart';
 import 'screens/cloud_files_screen.dart';
 import 'screens/local_files_screen.dart';
 import 'screens/preview_screen.dart';
+import 'screens/native_preview_screen.dart';
 
 final router = GoRouter(
   initialLocation: '/home',
@@ -81,7 +82,7 @@ final router = GoRouter(
         // 通过 extra 传递文件对象，简化 demo 实现
         final file = state.extra as CadFile;
         return CupertinoPage(
-          child: PreviewScreen(id: id, file: file),
+          child: NativePreviewScreen(id: id, file: file),
         );
       },
     ),

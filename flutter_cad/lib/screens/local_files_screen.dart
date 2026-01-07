@@ -98,24 +98,11 @@ class _LocalFilesScreenState extends State<LocalFilesScreen> {
         debugPrint('方式1失败: $e');
       }
 
-      // 方式2：如果方式1失败，尝试自定义类型
+      // 方式2：支持所有文件类型
       if (result == null) {
         try {
           result = await fp.FilePicker.platform.pickFiles(
-            type: fp.FileType.custom,
-            allowedExtensions: [
-              'dwg',
-              'dxf',
-              'ocf',
-              'pdf',
-              'jpg',
-              'png',
-              'doc',
-              'docx',
-              'txt',
-              'xls',
-              'xlsx',
-            ],
+            type: fp.FileType.any, // 支持所有文件类型
             allowMultiple: false,
           );
           debugPrint('方式2结果: ${result?.files.length ?? 0} 个文件');
@@ -507,26 +494,101 @@ class _LocalFilesScreenState extends State<LocalFilesScreen> {
   Widget _buildFileIcon(String fileName) {
     final extension = path.extension(fileName).toLowerCase();
     switch (extension) {
+      // CAD文件
       case '.dwg':
       case '.dxf':
-        return Icon(Icons.design_services, size: 20);
+        return Icon(Icons.design_services, size: 20, color: Colors.orange);
       case '.ocf':
-        return Icon(Icons.view_in_ar, size: 20);
-      case '.pdf':
-        return Icon(Icons.picture_as_pdf, size: 20);
+        return Icon(Icons.view_in_ar, size: 20, color: Colors.purple);
+
+      // 图片文件
       case '.jpg':
+      case '.jpeg':
       case '.png':
-        return Icon(Icons.image, size: 20);
+      case '.gif':
+      case '.bmp':
+      case '.webp':
+        return Icon(Icons.image, size: 20, color: Colors.blue);
+      case '.svg':
+        return Icon(Icons.crop_original, size: 20, color: Colors.purple);
+      case '.ico':
+        return Icon(Icons.apps, size: 20, color: Colors.grey);
+
+      // 文档文件
+      case '.pdf':
+        return Icon(Icons.picture_as_pdf, size: 20, color: Colors.red);
       case '.doc':
       case '.docx':
-        return Icon(Icons.description, size: 20);
-      case '.txt':
-        return Icon(Icons.text_snippet, size: 20);
+        return Icon(Icons.description, size: 20, color: Colors.blue);
       case '.xls':
       case '.xlsx':
-        return Icon(Icons.table_chart, size: 20);
+        return Icon(Icons.table_chart, size: 20, color: Colors.green);
+      case '.ppt':
+      case '.pptx':
+        return Icon(Icons.slideshow, size: 20, color: Colors.orange);
+
+      // 文本文件
+      case '.txt':
+        return Icon(Icons.text_snippet, size: 20, color: Colors.grey);
+      case '.md':
+        return Icon(Icons.code, size: 20, color: Colors.black);
+      case '.rtf':
+        return Icon(Icons.text_fields, size: 20, color: Colors.brown);
+      case '.csv':
+        return Icon(Icons.table_rows, size: 20, color: Colors.teal);
+      case '.json':
+        return Icon(Icons.data_object, size: 20, color: Colors.blue);
+      case '.xml':
+        return Icon(Icons.code, size: 20, color: Colors.orange);
+      case '.html':
+      case '.htm':
+        return Icon(Icons.language, size: 20, color: Colors.blue);
+
+      // 音频文件
+      case '.mp3':
+      case '.wav':
+      case '.flac':
+      case '.aac':
+      case '.m4a':
+      case '.ogg':
+        return Icon(Icons.audiotrack, size: 20, color: Colors.purple);
+
+      // 视频文件
+      case '.mp4':
+      case '.avi':
+      case '.mov':
+      case '.wmv':
+      case '.flv':
+      case '.mkv':
+      case '.webm':
+        return Icon(Icons.videocam, size: 20, color: Colors.red);
+
+      // 压缩文件
+      case '.zip':
+      case '.rar':
+      case '.7z':
+      case '.tar':
+      case '.gz':
+        return Icon(Icons.archive, size: 20, color: Colors.brown);
+
+      // 设计文件
+      case '.psd':
+        return Icon(Icons.brush, size: 20, color: Colors.purple);
+      case '.ai':
+        return Icon(Icons.palette, size: 20, color: Colors.orange);
+      case '.sketch':
+        return Icon(Icons.draw, size: 20, color: Colors.yellow);
+      case '.fig':
+        return Icon(Icons.design_services, size: 20, color: Colors.red);
+
+      // 电子书
+      case '.epub':
+      case '.mobi':
+        return Icon(Icons.menu_book, size: 20, color: Colors.green);
+
+      // 其他文件
       default:
-        return Icon(Icons.insert_drive_file, size: 20);
+        return Icon(Icons.insert_drive_file, size: 20, color: Colors.grey);
     }
   }
 }

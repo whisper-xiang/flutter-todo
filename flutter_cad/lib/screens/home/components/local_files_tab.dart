@@ -2,13 +2,14 @@
  * @Author: 轻语 243267674@qq.com
  * @Date: 2025-12-24 15:37:54
  * @LastEditors: 轻语
- * @LastEditTime: 2026-01-06 14:23:58
+ * @LastEditTime: 2026-01-07 13:49:27
  */
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../models/cad_file.dart';
 import '../../../services/file_storage_service.dart';
+import '../../../services/assets_file_service.dart';
 
 class LocalFilesTab extends StatefulWidget {
   final GlobalKey<ScaffoldState> scaffoldKey;
@@ -29,8 +30,7 @@ class _LocalFilesTabState extends State<LocalFilesTab>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-    _tabController.index = 1; // 默认选中Flutter原生标签（索引1）
+    _tabController = TabController(length: 1, vsync: this);
     _loadRecentFiles();
   }
 
@@ -45,10 +45,27 @@ class _LocalFilesTabState extends State<LocalFilesTab>
 
     setState(() => _isLoading = true);
     try {
+      // 加载本地文件
       final files = await _storageService.getLocalDrawings();
+      print('本地文件数量: ${files.length}');
+
+      // 加载assets测试文件
+      final assetsService = AssetsFileService();
+      final assetsFiles = await assetsService.initializeTestFiles();
+      print('Assets文件数量: ${assetsFiles.length}');
+
+      // 合并文件列表
+      final allFiles = [...files, ...assetsFiles];
+      print('总文件数量: ${allFiles.length}');
+
+      // 打印所有文件名用于调试
+      for (final file in allFiles) {
+        print('文件: ${file.path.split('/').last}');
+      }
+
       if (mounted) {
         setState(() {
-          _recentFiles = files.take(5).toList();
+          _recentFiles = allFiles.toList();
           _isLoading = false;
         });
       }
@@ -59,25 +76,6 @@ class _LocalFilesTabState extends State<LocalFilesTab>
           context,
         ).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
-    }
-  }
-
-  Future<void> _openFileWithWebView(File file) async {
-    final fileSize = await file.length();
-    final fileName = file.path.split('/').last;
-    final fileId = 'local-webview-${file.path.hashCode}';
-
-    final cadFile = CadFile(
-      id: fileId,
-      name: fileName,
-      path: file.path,
-      url: null,
-      type: FileType.cad2d,
-      modifiedAt: DateTime.now(),
-      size: fileSize,
-    );
-    if (mounted) {
-      context.push('/webview-preview/$fileId', extra: cadFile);
     }
   }
 
@@ -124,25 +122,12 @@ class _LocalFilesTabState extends State<LocalFilesTab>
             onPressed: () => _loadRecentFiles(),
           ),
         ],
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: const [
-            Tab(icon: Icon(Icons.web), text: 'WebView渲染'),
-            Tab(icon: Icon(Icons.phone_android), text: 'Flutter原生'),
-          ],
-        ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildFileList(isWebView: true),
-          _buildFileList(isWebView: false),
-        ],
-      ),
+      body: _buildFileList(),
     );
   }
 
-  Widget _buildFileList({required bool isWebView}) {
+  Widget _buildFileList() {
     if (_isLoading) {
       return const Padding(
         padding: EdgeInsets.all(16.0),
@@ -154,21 +139,23 @@ class _LocalFilesTabState extends State<LocalFilesTab>
       return _buildEmptyState();
     }
 
-    return Column(
-      children: [
-        ..._recentFiles.map(
-          (file) => ListTile(
-            leading: const Icon(Icons.insert_drive_file),
-            title: Text(file.path.split('/').last),
-            subtitle: Text(isWebView ? 'WebView渲染' : 'Flutter原生'),
-            trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-            onTap: () => isWebView
-                ? _openFileWithWebView(file)
-                : _openFileWithNative(file),
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const AlwaysScrollableScrollPhysics(),
+      itemCount: _recentFiles.length,
+      itemBuilder: (context, index) {
+        final file = _recentFiles[index];
+        return ListTile(
+          leading: Icon(
+            _getFileIcon(file.path.split('/').last),
+            color: _getFileIconColor(file.path.split('/').last),
           ),
-        ),
-        const Divider(),
-      ],
+          title: Text(file.path.split('/').last),
+          subtitle: Text(_formatFileSize(file.lengthSync())),
+          trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+          onTap: () => _openFileWithNative(file),
+        );
+      },
     );
   }
 
@@ -192,5 +179,135 @@ class _LocalFilesTabState extends State<LocalFilesTab>
         ),
       ),
     );
+  }
+
+  IconData _getFileIcon(String fileName) {
+    final extension = fileName.split('.').last.toLowerCase();
+    switch (extension) {
+      case '.dwg':
+      case '.dxf':
+        return Icons.design_services;
+      case '.ocf':
+        return Icons.view_in_ar;
+      case '.pdf':
+        return Icons.picture_as_pdf;
+      case '.jpg':
+      case '.jpeg':
+      case '.png':
+      case '.gif':
+      case '.bmp':
+      case '.webp':
+        return Icons.image;
+      case '.doc':
+      case '.docx':
+        return Icons.description;
+      case '.txt':
+        return Icons.text_snippet;
+      case '.xls':
+      case '.xlsx':
+        return Icons.table_chart;
+      case '.ppt':
+      case '.pptx':
+        return Icons.slideshow;
+      case '.mp3':
+      case '.wav':
+      case '.flac':
+      case '.aac':
+      case '.m4a':
+      case '.ogg':
+        return Icons.audiotrack;
+      case '.mp4':
+      case '.avi':
+      case '.mov':
+      case '.wmv':
+      case '.flv':
+      case '.mkv':
+      case '.webm':
+        return Icons.videocam;
+      case '.zip':
+      case '.rar':
+      case '.7z':
+      case '.tar':
+      case '.gz':
+        return Icons.archive;
+      case '.psd':
+      case '.ai':
+      case '.sketch':
+      case '.fig':
+        return Icons.brush;
+      case '.epub':
+      case '.mobi':
+        return Icons.menu_book;
+      default:
+        return Icons.insert_drive_file;
+    }
+  }
+
+  Color _getFileIconColor(String fileName) {
+    final extension = fileName.split('.').last.toLowerCase();
+    switch (extension) {
+      case '.dwg':
+      case '.dxf':
+        return Colors.orange;
+      case '.ocf':
+        return Colors.purple;
+      case '.pdf':
+        return Colors.red;
+      case '.jpg':
+      case '.jpeg':
+      case '.png':
+      case '.gif':
+      case '.bmp':
+      case '.webp':
+        return Colors.blue;
+      case '.doc':
+      case '.docx':
+        return Colors.blue;
+      case '.txt':
+        return Colors.grey;
+      case '.xls':
+      case '.xlsx':
+        return Colors.green;
+      case '.ppt':
+      case '.pptx':
+        return Colors.orange;
+      case '.mp3':
+      case '.wav':
+      case '.flac':
+      case '.aac':
+      case '.m4a':
+      case '.ogg':
+        return Colors.purple;
+      case '.mp4':
+      case '.avi':
+      case '.mov':
+      case '.wmv':
+      case '.flv':
+      case '.mkv':
+      case '.webm':
+        return Colors.red;
+      case '.zip':
+      case '.rar':
+      case '.7z':
+      case '.tar':
+      case '.gz':
+        return Colors.brown;
+      case '.psd':
+      case '.ai':
+      case '.sketch':
+      case '.fig':
+        return Colors.purple;
+      case '.epub':
+      case '.mobi':
+        return Colors.green;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  String _formatFileSize(int bytes) {
+    if (bytes < 1024) return '$bytes B';
+    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
   }
 }

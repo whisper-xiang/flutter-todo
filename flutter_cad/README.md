@@ -99,3 +99,31 @@ flutter run -d "iPhone 17 Pro"
 
 我的想法是:
 我们先拿出来一个东西 看着这个东西后，觉得二维这边还有提升空间，自然就会用dwg原生解析器解析会如何，向移动底层要库的时候会更容易
+
+
+对于 PDF、图片等基本格式，有比较成熟的插件（syncfusion_flutter_pdfviewer 等）可以内嵌预览。
+对于 Word/DOCX，社区几乎没有真正成熟、能完美还原格式（字体/样式/表格/图片）的插件。这是 Flutter 生态的一个现实问题。
+很多讨论里建议：
+	•	用 open_file 调用本地 App
+  •	或把 Word 转成 PDF，然后用成熟 PDF 组件预览
+
+
+
+| 文件类型 | 常见扩展名 | Flutter 最佳方案 | Flutter 支持程度 | iOS 原生方案 | Android 原生方案 | 内嵌预览 | 外部 App | WebView 渲染 | 能力边界 / 限制 |
+|--------|------------|----------------|----------------|---------------|----------------|-----------|-----------|---------------|----------------|
+| 图片 | jpg / png / webp | Image / ExtendedImage | ⭐⭐⭐⭐⭐ | UIImageView | ImageView | ✅ | ❌ | ❌ | Flutter 内可控，支持缩放裁剪，不支持专业编辑 |
+| GIF | gif | Image / flutter_gif | ⭐⭐⭐⭐ | UIImageView (动图) | ImageView / Glide | ✅ | ❌ | ❌ | 大文件性能有限 |
+| 视频 | mp4 / mov | video_player | ⭐⭐⭐⭐ | AVPlayer | MediaPlayer / ExoPlayer | ✅ | ❌ | ❌ | 不支持视频剪辑 |
+| 音频 | mp3 / wav | just_audio | ⭐⭐⭐⭐ | AVAudioPlayer | MediaPlayer / ExoPlayer | ✅ | ❌ | ❌ | 不支持音频编辑 |
+| PDF | pdf | pdfx / syncfusion_pdfviewer | ⭐⭐⭐⭐ | PDFKit | PdfRenderer / 3rd party | ✅ | ✅ | ✅ | Flutter 内可嵌，复杂 PDF 编辑有限 |
+| Word | doc / docx | open_file | ⭐⭐⭐⭐ | Word / Pages | Word / WPS | ⚠️ 内嵌 WebView 可在线预览 | ✅ | ✅（在线 URL） | Flutter 不解析 Office |
+| Excel | xls / xlsx | open_file | ⭐⭐⭐⭐ | Excel / Numbers | Excel / WPS | ⚠️ 内嵌 WebView 可在线预览 | ✅ | ✅（在线 URL） | Flutter 不解析 Office |
+| PPT | ppt / pptx | open_file | ⭐⭐⭐⭐ | PowerPoint / Keynote | PowerPoint / WPS | ⚠️ 内嵌 WebView 可在线预览 | ✅ | ✅（在线 URL） | 不支持动画控制 |
+| TXT | txt | Text / SelectableText | ⭐⭐⭐⭐⭐ | UITextView | TextView | ✅ | ❌ | ✅（HTML 可用） | 无格式能力 |
+| Markdown | md | flutter_markdown | ⭐⭐⭐⭐ | UITextView / Markdown Viewer | TextView / Markdown Viewer | ✅ | ⚠️ 可外部打开 | ✅（HTML 可用） | 样式有限 |
+| HTML | html | WebView | ⭐⭐⭐⭐ | WKWebView | WebView | ✅ | ⚠️ 可外部浏览器 | ✅ | JS/CSS 支持依赖 WebView |
+| ZIP | zip / rar | archive | ⭐⭐⭐ | 系统文件管理器 | 系统文件管理器 / 7-Zip | ❌ | ⚠️ 外部查看器 | ❌ | Flutter 不做文件管理器 |
+| CSV | csv | csv + Table | ⭐⭐⭐ | Numbers / Excel | Excel / WPS | ✅ | ⚠️ 可外部打开 | ⚠️ WebView | 大文件性能有限 |
+| JSON | json | 自解析 / 可视化 | ⭐⭐⭐⭐ | Xcode JSON Viewer / App | Android Studio JSON Viewer / App | ✅ | ⚠️ 可外部打开 | ⚠️ WebView | Flutter 内解析可控 |
+| DWG | dwg | ❌ | ⭐ | AutoCAD / CAD App | AutoCAD / CAD App | ❌ | ✅ | ❌ | Flutter 无 CAD 支持 |
+| PSD | psd | ❌ | ⭐ | Photoshop / Affinity | Photoshop / Affinity | ❌ | ✅ | ❌ | Flutter 无原生 PSD 渲染 |

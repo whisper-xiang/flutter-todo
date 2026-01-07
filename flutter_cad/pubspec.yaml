@@ -45,6 +45,7 @@ dependencies:
   flutter_flavor: ^3.1.4
   device_info_plus: ^10.1.0
   permission_handler: ^11.3.0
+  url_launcher: ^6.3.0
 
 dev_dependencies:
   flutter_test:
@@ -65,6 +66,8 @@ flutter:
   assets:
     - assets/dwg/
     - assets/web/
+    - assets/test_files/
+    - assets/config/
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in

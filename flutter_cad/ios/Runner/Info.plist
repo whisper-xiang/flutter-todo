@@ -53,5 +53,12 @@
 	<string>此应用需要访问下载文件夹以读取和保存CAD文件</string>
 	<key>NSPhotosLibraryUsageDescription</key>
 	<string>此应用需要访问照片库以导入图片文件</string>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>mailto</string>
+		<string>tel</string>
+		<string>http</string>
+		<string>https</string>
+	</array>
 </dict>
 </plist>

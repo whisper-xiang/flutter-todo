@@ -1,0 +1,89 @@
+{
+  "test_files": [
+    {
+      "path": "assets/test_files/sample2.pdf",
+      "category": "PDF文件",
+      "description": "PDF测试文件"
+    },
+    {
+      "path": "assets/test_files/sample1.txt",
+      "category": "文本文件",
+      "description": "文本测试文件"
+    },
+    {
+      "path": "assets/test_files/sample1.csv",
+      "category": "文本文件",
+      "description": "CSV测试文件"
+    },
+    {
+      "path": "assets/test_files/sample2.doc",
+      "category": "Office文档",
+      "description": "Word文档测试"
+    },
+    {
+      "path": "assets/test_files/sample3.docx",
+      "category": "Office文档",
+      "description": "Word文档测试"
+    },
+    {
+      "path": "assets/test_files/sample2.xls",
+      "category": "Office文档",
+      "description": "Excel表格测试"
+    },
+    {
+      "path": "assets/test_files/sample3.xlsx",
+      "category": "Office文档",
+      "description": "Excel表格测试"
+    },
+    {
+      "path": "assets/test_files/sample3.ppt",
+      "category": "Office文档",
+      "description": "PowerPoint测试"
+    },
+    {
+      "path": "assets/test_files/file_example_JPG_100kB.jpg",
+      "category": "图片文件",
+      "description": "JPG图片测试"
+    },
+    {
+      "path": "assets/test_files/file_example_PNG_500kB.png",
+      "category": "图片文件",
+      "description": "PNG图片测试"
+    },
+    {
+      "path": "assets/test_files/file_example_GIF_500kB.gif",
+      "category": "图片文件",
+      "description": "GIF图片测试"
+    },
+    {
+      "path": "assets/test_files/file_example_WEBP_50kB.webp",
+      "category": "图片文件",
+      "description": "WEBP图片测试"
+    },
+    {
+      "path": "assets/test_files/file_example_OGG_480_1_7mg.ogg",
+      "category": "音频文件",
+      "description": "OGG音频测试"
+    },
+    {
+      "path": "assets/test_files/file_example_AVI_480_750kB.avi",
+      "category": "视频文件",
+      "description": "AVI视频测试"
+    },
+    {
+      "path": "assets/test_files/file_example_WEBM_480_900KB.webm",
+      "category": "视频文件",
+      "description": "WEBM视频测试"
+    },
+    {
+      "path": "assets/test_files/file_example_WMV_480_1_2MB.wmv",
+      "category": "视频文件",
+      "description": "WMV视频测试"
+    },
+    {
+      "path": "assets/test_files/电磁铁.dwg",
+      "category": "CAD文件",
+      "description": "CAD图纸测试"
+    }
+  ]
+}

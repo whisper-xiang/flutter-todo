@@ -152,18 +152,31 @@ class FileStorageService {
             final files = await searchDir.list().toList();
             final drawingFiles = files.whereType<File>().where((file) {
               final extension = path.extension(file.path).toLowerCase();
+              // 支持所有常见的文件类型
               return [
-                '.dwg',
-                '.dxf',
-                '.ocf',
-                '.pdf',
+                // CAD文件
+                '.dwg', '.dxf', '.ocf',
+                // 图片文件
                 '.jpg',
+                '.jpeg',
                 '.png',
-                '.doc',
-                '.docx',
-                '.txt',
-                '.xls',
-                '.xlsx',
+                '.gif',
+                '.bmp',
+                '.webp',
+                '.svg',
+                '.ico',
+                // 文档文件
+                '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx',
+                // 文本文件
+                '.txt', '.md', '.rtf', '.csv', '.json', '.xml', '.html', '.htm',
+                // 音频文件
+                '.mp3', '.wav', '.flac', '.aac', '.m4a', '.ogg',
+                // 视频文件
+                '.mp4', '.avi', '.mov', '.wmv', '.flv', '.mkv', '.webm',
+                // 压缩文件
+                '.zip', '.rar', '.7z', '.tar', '.gz',
+                // 其他常见格式
+                '.psd', '.ai', '.sketch', '.fig', '.epub', '.mobi',
               ].contains(extension);
             }).toList();
 
