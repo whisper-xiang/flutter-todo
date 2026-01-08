@@ -28,6 +28,14 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        
+        // Add CMake configuration for native code
+        externalNativeBuild {
+            cmake {
+                cppFlags("-std=c++17", "-frtti", "-fexceptions")
+                arguments("-DANDROID_STL=c++_shared")
+            }
+        }
     }
 
     buildTypes {
@@ -35,6 +43,14 @@ android {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
+        }
+    }
+    
+    // Add external build configuration
+    externalNativeBuild {
+        cmake {
+            path = "CMakeLists.txt"
+            version = "3.18.1"
         }
     }
 }
