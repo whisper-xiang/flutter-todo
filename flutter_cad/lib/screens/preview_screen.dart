@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'dart:io';
 import 'dart:convert';
-import 'dart:typed_data';
 import '../models/cad_file.dart';
-import '../services/teigha_service.dart';
 
 class PreviewScreen extends StatefulWidget {
   final String id;
@@ -19,8 +17,6 @@ class PreviewScreen extends StatefulWidget {
 class _PreviewScreenState extends State<PreviewScreen> {
   late final WebViewController _controller;
   bool _isLoading = true;
-  bool _useTeighaRenderer = false;
-  Uint8List? _renderedImage;
 
   @override
   void initState() {
@@ -29,67 +25,10 @@ class _PreviewScreenState extends State<PreviewScreen> {
   }
 
   Future<void> _initializePreview() async {
-    final fileExtension = widget.file.name.split('.').last.toLowerCase();
-
-    if (fileExtension == 'dwg' && widget.file.path != null) {
-      // Use Teigha renderer for DWG files
-      setState(() {
-        _useTeighaRenderer = true;
-      });
-      await _initializeTeighaRenderer();
-    } else {
-      // Use WebView for other files
-      await _initializeWebView();
-    }
+    // 所有格式走WebView渲染
+    await _initializeWebView();
   }
 
-  Future<void> _initializeTeighaRenderer() async {
-    try {
-      await TeighaService.initialize();
-      await _renderDwgWithTeigha();
-    } catch (e) {
-      debugPrint('Failed to initialize Teigha renderer: $e');
-      // Fallback to WebView
-      setState(() {
-        _useTeighaRenderer = false;
-      });
-      await _initializeWebView();
-    }
-  }
-
-  Future<void> _renderDwgWithTeigha() async {
-    if (widget.file.path == null) return;
-
-    try {
-      setState(() {
-        _isLoading = true;
-      });
-
-      final imageData = await TeighaService.renderDwgToImage(
-        widget.file.path!,
-        width: 1024,
-        height: 768,
-        format: 'png',
-      );
-
-      if (imageData != null) {
-        setState(() {
-          _renderedImage = imageData;
-          _isLoading = false;
-        });
-      } else {
-        throw Exception('Failed to render DWG image');
-      }
-    } catch (e) {
-      debugPrint('Failed to render DWG with Teigha: $e');
-      // Fallback to WebView
-      setState(() {
-        _useTeighaRenderer = false;
-        _isLoading = false;
-      });
-      await _initializeWebView();
-    }
-  }
 
   Future<void> _initializeWebView() async {
     _controller = WebViewController()
@@ -553,23 +492,16 @@ class _PreviewScreenState extends State<PreviewScreen> {
       appBar: AppBar(
         title: Text(widget.file.name),
         actions: [
-          if (_useTeighaRenderer)
-            IconButton(
-              icon: const Icon(Icons.info_outline),
-              onPressed: _showDwgInfo,
-              tooltip: 'DWG Info',
-            ),
-          if (!_useTeighaRenderer)
-            IconButton(
-              icon: const Icon(Icons.message),
-              onPressed: () {
-                // Send message to WebView
-                _controller.runJavaScript(
-                  'receiveFromFlutter("Hello from Flutter!");',
-                );
-              },
-              tooltip: 'Send Message to WebView',
-            ),
+          IconButton(
+            icon: const Icon(Icons.message),
+            onPressed: () {
+              // Send message to WebView
+              _controller.runJavaScript(
+                'receiveFromFlutter("Hello from Flutter!");',
+              );
+            },
+            tooltip: 'Send Message to WebView',
+          ),
         ],
       ),
       body: _buildBody(),
@@ -577,93 +509,10 @@ class _PreviewScreenState extends State<PreviewScreen> {
   }
 
   Widget _buildBody() {
-    if (_useTeighaRenderer) {
-      // Use Teigha rendered image
-      if (_isLoading) {
-        return const Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 16),
-              Text('Rendering DWG with Teigha SDK...'),
-            ],
-          ),
-        );
-      }
-
-      if (_renderedImage != null) {
-        return InteractiveViewer(
-          panEnabled: true,
-          boundaryMargin: const EdgeInsets.all(20),
-          minScale: 0.5,
-          maxScale: 4.0,
-          child: Center(
-            child: Image.memory(_renderedImage!, fit: BoxFit.contain),
-          ),
-        );
-      }
-
-      return const Center(child: Text('Failed to render DWG file'));
-    } else {
-      // Use WebView
-      return Stack(
-        children: [
-          WebViewWidget(controller: _controller),
-          if (_isLoading) const Center(child: CircularProgressIndicator()),
-        ],
-      );
-    }
+    return Stack(
+      children: [
+        WebViewWidget(controller: _controller),
+        if (_isLoading) const Center(child: CircularProgressIndicator()),
+      ],
+    );
   }
-
-  Future<void> _showDwgInfo() async {
-    if (widget.file.path == null) return;
-
-    try {
-      final info = await TeighaService.getDwgInfo(widget.file.path!);
-      if (info != null && mounted) {
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('DWG File Information'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: info.entries.map((entry) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        width: 80,
-                        child: Text(
-                          '${entry.key}:',
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      Expanded(child: Text(entry.value.toString())),
-                    ],
-                  ),
-                );
-              }).toList(),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Close'),
-              ),
-            ],
-          ),
-        );
-      }
-    } catch (e) {
-      debugPrint('Failed to get DWG info: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to get DWG information')),
-        );
-      }
-    }
-  }
-}

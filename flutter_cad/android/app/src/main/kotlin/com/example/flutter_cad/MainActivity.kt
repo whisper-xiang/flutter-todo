@@ -7,7 +7,5 @@ class MainActivity : FlutterActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         
-        // Register Teigha SDK channel
-        TeighaChannel.setup(flutterEngine, this)
     }
 }
