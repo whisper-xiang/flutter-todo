@@ -46,6 +46,8 @@ dependencies:
   device_info_plus: ^10.1.0
   permission_handler: ^11.3.0
   url_launcher: ^6.3.0
+  hoops_visualize:
+    path: ./hoops_visualize
 
 dev_dependencies:
   flutter_test:

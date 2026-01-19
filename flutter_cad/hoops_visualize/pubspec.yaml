@@ -1,0 +1,23 @@
+name: hoops_visualize
+description: A Flutter plugin for HOOPS Visualize SDK to render CAD files (DWG, etc.)
+version: 0.0.1
+homepage: https://github.com/whisper-xiang/flutter-todo
+
+environment:
+  sdk: ^3.10.3
+  flutter: ">=3.3.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  plugin:
+    platforms:
+      macos:
+        pluginClass: HoopsVisualizePlugin

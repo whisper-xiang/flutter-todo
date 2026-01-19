@@ -29,7 +29,6 @@ class _PreviewScreenState extends State<PreviewScreen> {
     await _initializeWebView();
   }
 
-
   Future<void> _initializeWebView() async {
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
@@ -516,3 +515,4 @@ class _PreviewScreenState extends State<PreviewScreen> {
       ],
     );
   }
+}

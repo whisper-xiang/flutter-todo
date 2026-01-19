@@ -17,6 +17,7 @@ import 'screens/cloud_files_screen.dart';
 import 'screens/local_files_screen.dart';
 import 'screens/preview_screen.dart';
 import 'screens/native_preview_screen.dart';
+import 'screens/hoops_preview_screen.dart';
 
 final router = GoRouter(
   initialLocation: '/home',
@@ -83,6 +84,16 @@ final router = GoRouter(
         final file = state.extra as CadFile;
         return CupertinoPage(
           child: NativePreviewScreen(id: id, file: file),
+        );
+      },
+    ),
+    GoRoute(
+      path: '/hoops-preview/:id',
+      pageBuilder: (context, state) {
+        final id = state.pathParameters['id']!;
+        final file = state.extra as CadFile;
+        return CupertinoPage(
+          child: HoopsPreviewScreen(id: id, file: file),
         );
       },
     ),

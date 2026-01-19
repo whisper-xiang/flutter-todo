@@ -84,6 +84,16 @@
       "path": "assets/test_files/电磁铁.dwg",
       "category": "CAD文件",
       "description": "CAD图纸测试"
+    },
+    {
+      "path": "assets/test_files/demo.hsf",
+      "category": "CAD文件",
+      "description": "HOOPS HSF测试文件"
+    },
+    {
+      "path": "assets/test_files/bnc.hsf",
+      "category": "CAD文件",
+      "description": "HOOPS SDK示例HSF文件"
     }
   ]
 }

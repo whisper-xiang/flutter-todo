@@ -2,7 +2,7 @@
  * @Author: 轻语 243267674@qq.com
  * @Date: 2025-12-24 15:37:54
  * @LastEditors: 轻语
- * @LastEditTime: 2026-01-07 13:49:27
+ * @LastEditTime: 2026-01-19 15:22:21
  */
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -83,18 +83,54 @@ class _LocalFilesTabState extends State<LocalFilesTab>
     final fileSize = await file.length();
     final fileName = file.path.split('/').last;
     final fileId = 'local-native-${file.path.hashCode}';
+    final extension = fileName.split('.').last.toLowerCase();
+
+    // 根据文件扩展名确定文件类型
+    FileType fileType;
+    if (['dwg', 'dxf'].contains(extension)) {
+      fileType = FileType.cad2d;
+    } else if ([
+      'ocf',
+      'sldprt',
+      'step',
+      'stp',
+      'iges',
+      'igs',
+      'hsf',
+    ].contains(extension)) {
+      fileType = FileType.cad3d;
+    } else if (['pdf'].contains(extension)) {
+      fileType = FileType.pdf;
+    } else if ([
+      'jpg',
+      'jpeg',
+      'png',
+      'gif',
+      'bmp',
+      'webp',
+    ].contains(extension)) {
+      fileType = FileType.image;
+    } else {
+      fileType = FileType.unknown;
+    }
 
     final cadFile = CadFile(
       id: fileId,
       name: fileName,
       path: file.path,
       url: null,
-      type: FileType.cad2d,
+      type: fileType,
       modifiedAt: DateTime.now(),
       size: fileSize,
     );
+
     if (mounted) {
-      context.push('/native-preview/$fileId', extra: cadFile);
+      // CAD文件使用HOOPS预览，其他文件使用普通预览
+      if (fileType == FileType.cad2d || fileType == FileType.cad3d) {
+        context.push('/hoops-preview/$fileId', extra: cadFile);
+      } else {
+        context.push('/preview/$fileId', extra: cadFile);
+      }
     }
   }
 

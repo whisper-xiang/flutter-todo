@@ -286,7 +286,12 @@ class _LocalFilesScreenState extends State<LocalFilesScreen> {
 
       // 跳转到预览页面
       if (mounted) {
-        context.push('/preview/${cadFile.id}', extra: cadFile);
+        // CAD文件使用HOOPS预览，其他文件使用普通预览
+        if (fileType == FileType.cad2d || fileType == FileType.cad3d) {
+          context.push('/hoops-preview/${cadFile.id}', extra: cadFile);
+        } else {
+          context.push('/preview/${cadFile.id}', extra: cadFile);
+        }
       }
     } catch (e) {
       if (mounted) {
