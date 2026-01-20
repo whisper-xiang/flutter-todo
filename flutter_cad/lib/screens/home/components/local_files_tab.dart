@@ -2,7 +2,7 @@
  * @Author: 轻语 243267674@qq.com
  * @Date: 2025-12-24 15:37:54
  * @LastEditors: 轻语
- * @LastEditTime: 2026-01-19 15:22:21
+ * @LastEditTime: 2026-01-20 14:29:28
  */
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -97,6 +97,7 @@ class _LocalFilesTabState extends State<LocalFilesTab>
       'iges',
       'igs',
       'hsf',
+      'obj',
     ].contains(extension)) {
       fileType = FileType.cad3d;
     } else if (['pdf'].contains(extension)) {

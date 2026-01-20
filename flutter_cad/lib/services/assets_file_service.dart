@@ -85,6 +85,50 @@ class AssetsFileService {
     }
   }
 
+  /// 复制整个assets目录到应用文档目录（用于包含材质和贴图的OBJ模型）
+  Future<void> copyAssetDirectory(String assetDirPath) async {
+    try {
+      // 获取应用文档目录
+      final directory = await getApplicationDocumentsDirectory();
+      final dirName = path.basename(assetDirPath);
+      final targetDir = Directory(path.join(directory.path, dirName));
+
+      // 如果目录已存在，跳过
+      if (await targetDir.exists()) {
+        print('Assets目录已存在: ${targetDir.path}');
+        return;
+      }
+
+      // 创建目标目录
+      await targetDir.create(recursive: true);
+
+      // 获取assets目录下的所有文件
+      final manifestContent = await rootBundle.loadString('AssetManifest.json');
+      final manifest = jsonDecode(manifestContent) as Map<String, dynamic>;
+
+      for (final key in manifest.keys) {
+        if (key.startsWith(assetDirPath) && !key.endsWith('/')) {
+          try {
+            final byteData = await rootBundle.load(key);
+            final bytes = byteData.buffer.asUint8List();
+            final relativePath = key.substring(assetDirPath.length);
+            final targetFile = File(path.join(targetDir.path, relativePath));
+            await targetFile.parent.create(recursive: true);
+            await targetFile.writeAsBytes(bytes);
+            print('复制资源文件: $key -> ${targetFile.path}');
+          } catch (e) {
+            print('复制资源文件失败: $key, 错误: $e');
+          }
+        }
+      }
+
+      print('Assets目录复制成功: ${targetDir.path}');
+    } catch (e) {
+      print('复制assets目录失败: $e');
+      rethrow;
+    }
+  }
+
   /// 初始化所有测试文件
   Future<List<File>> initializeTestFiles() async {
     final List<File> files = [];

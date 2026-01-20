@@ -75,6 +75,8 @@
         _view.GetSegmentKey().GetCameraControl()
             .SetProjection(HPS::Camera::Projection::Perspective);
         
+        // 光源将在模型加载后添加，类似于HOOPS SDK示例
+        
         // 添加默认操作符
         HPS::OrbitOperator* orbitOp = new HPS::OrbitOperator(HPS::MouseButtons::ButtonLeft());
         HPS::PanOperator* panOp = new HPS::PanOperator(HPS::MouseButtons::ButtonRight());
@@ -187,6 +189,24 @@
             HPS::Exchange::ImportOptionsKit importOptions;
             importOptions.SetBRepMode(HPS::Exchange::BRepMode::BRepAndTessellation);
             
+            // 为OBJ文件启用材质和纹理加载
+            if ([extension isEqualToString:@"obj"]) {
+                NSLog(@"Loading OBJ file - Exchange will attempt to load materials and textures by default");
+                // TODO: 根据HOOPS版本，可能需要使用其他API来控制材质/纹理加载
+                // importOptions.SetLoadTextures(true);
+                // importOptions.SetLoadMaterials(true);
+                // importOptions.SetLoadAppearance(true);
+                
+                // 设置纹理搜索路径为文件所在目录
+                // NSString* dirPath = [filePath stringByDeletingLastPathComponent];
+                // HPS::UTF8Array searchPaths;
+                // searchPaths.push_back([dirPath UTF8String]);
+                // importOptions.SetTextureSearchPaths(searchPaths);
+                // importOptions.SetMaterialSearchPaths(searchPaths);
+                
+                NSLog(@"OBJ file directory: %@", [filePath stringByDeletingLastPathComponent]);
+            }
+            
             HPS::Exchange::ImportNotifier notifier = HPS::Exchange::File::Import([filePath UTF8String], importOptions);
             
             // 等待导入完成
@@ -205,6 +225,46 @@
                     
                     // 将CAD模型附加到Model
                     _cadModel.GetModel().GetSegmentKey().MoveTo(_model.GetSegmentKey());
+                    
+                    // 为OBJ文件启用更好的光照和材质效果
+                    if ([extension isEqualToString:@"obj"]) {
+                        NSLog(@"Loading OBJ with model-based lighting");
+                        
+                        // 使用基础的光照设置
+                        HPS::SegmentKey modelSegment = _model.GetSegmentKey();
+                        
+                        // 启用光照
+                        try {
+                            modelSegment.GetVisibilityControl().SetLights(true);
+                            NSLog(@"Enabled lights for OBJ");
+                        } catch (...) {
+                            NSLog(@"SetLights not available");
+                        }
+                        
+                        // 由于MTL文件中Kd都是0.00 0.00 0.00，需要设置备用颜色
+                        try {
+                            // 为模型段设置备用颜色
+                            modelSegment.GetMaterialMappingControl().SetFaceColor(HPS::RGBAColor(0.8, 0.8, 0.8, 1));
+                            modelSegment.GetMaterialMappingControl().SetBackFaceColor(HPS::RGBAColor(0.8, 0.8, 0.8, 1));
+                            
+                            NSLog(@"Set fallback colors for missing textures");
+                        } catch (...) {
+                            NSLog(@"Failed to set fallback colors");
+                        }
+                        
+                        // 在模型段上添加光源，类似于HOOPS SDK示例
+                        try {
+                            // 主光源（从右上方）
+                            modelSegment.InsertDistantLight(HPS::Vector(1, 1, 0));
+                            // 侧光源（从左侧）
+                            modelSegment.InsertDistantLight(HPS::Vector(-1, 0, 0));
+                            // 底部光源（从下方）
+                            modelSegment.InsertDistantLight(HPS::Vector(0, 1, 0));
+                            NSLog(@"Added model-based lights for OBJ");
+                        } catch (...) {
+                            NSLog(@"Failed to add model lights");
+                        }
+                    }
                     
                     // 适应视图
                     _view.FitWorld();

@@ -94,6 +94,31 @@
       "path": "assets/test_files/bnc.hsf",
       "category": "CAD文件",
       "description": "HOOPS SDK示例HSF文件"
+    },
+    {
+      "path": "assets/test_files/Motherboard/Motherboard.obj",
+      "category": "CAD文件",
+      "description": "HOOPS SDK示例主板OBJ模型（含材质与贴图）"
+    },
+    {
+      "path": "assets/test_files/Motherboard/Motherboard.mtl",
+      "category": "CAD文件",
+      "description": "Motherboard OBJ材质文件"
+    },
+    {
+      "path": "assets/test_files/Motherboard/BoardTex.jpg",
+      "category": "CAD文件",
+      "description": "Motherboard主板贴图文件"
+    },
+    {
+      "path": "assets/test_files/Motherboard/ChipTex.jpg",
+      "category": "CAD文件",
+      "description": "Motherboard芯片贴图文件"
+    },
+    {
+      "path": "assets/test_files/Motherboard/SlotTex.jpg",
+      "category": "CAD文件",
+      "description": "Motherboard插槽贴图文件"
     }
   ]
 }

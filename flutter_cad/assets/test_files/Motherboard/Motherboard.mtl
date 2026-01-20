@@ -1,0 +1,103 @@
+newmtl blinn22SG
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+map_Kd BoardTex.jpg
+Ni 1.00
+Ks 0.00 0.00 0.00
+newmtl blinn30SG
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+map_Kd BlueplasticTex.jpg
+Ni 1.00
+Ks 0.50 0.50 0.50
+newmtl blinn31SG
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+map_Kd Blackplastic.jpg
+Ni 1.00
+Ks 0.50 0.50 0.50
+newmtl blinn34SG
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+map_Kd ChipsTex.jpg
+Ni 1.00
+Ks 0.50 0.50 0.50
+newmtl blinn36SG
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+map_Kd MidPins.jpg
+Ni 1.00
+Ks 0.50 0.50 0.50
+newmtl blinn39SG
+illum 4
+Kd 1.00 1.00 1.00
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+Ni 1.00
+Ks 0.50 0.50 0.50
+newmtl blinn40SG
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+map_Kd LogoSheildsTex.jpg
+Ni 1.00
+Ks 0.50 0.50 0.50
+newmtl blinn41SG
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+map_Kd PowerAndReset.jpg
+Ni 1.00
+Ks 0.50 0.50 0.50
+newmtl blinn43SG
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+map_Kd WhiteplasticTex.jpg
+Ni 1.00
+Ks 0.50 0.50 0.50
+newmtl blinn44SG
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+map_Kd RedBotton.jpg
+Ni 1.00
+Ks 0.50 0.50 0.50
+newmtl blinn45SG
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+map_Kd HeatsinksTex.jpg
+Ni 1.00
+Ks 0.50 0.50 0.50
+newmtl blinn46SG
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+map_Kd Crome.jpg
+Ni 1.00
+Ks 0.50 0.50 0.50
+newmtl blinn47SG
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+map_Kd Pluginscolor.jpg
+Ni 1.00
+Ks 0.50 0.50 0.50

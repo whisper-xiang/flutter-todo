@@ -69,6 +69,7 @@ flutter:
     - assets/dwg/
     - assets/web/
     - assets/test_files/
+    - assets/test_files/Motherboard/
     - assets/config/
 
   # The following line ensures that the Material Icons font is
