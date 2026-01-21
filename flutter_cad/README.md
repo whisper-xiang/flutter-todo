@@ -79,7 +79,7 @@ xcrun simctl list devices available
 
 xcrun simctl boot 77134BEA-442A-4F99-B9FF-DA0D993398A7
 
-flutter emulators
+flutter emulators |  open -a Simulator
 
 flutter devices
 

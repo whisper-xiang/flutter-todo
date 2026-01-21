@@ -3,6 +3,10 @@ enum FileType {
   pdf,
   cad2d,
   cad3d,
+  video,
+  audio,
+  text,
+  document,
   unknown
 }
 

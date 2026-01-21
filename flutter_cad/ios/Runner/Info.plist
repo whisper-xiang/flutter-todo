@@ -53,6 +53,14 @@
 	<string>此应用需要访问下载文件夹以读取和保存CAD文件</string>
 	<key>NSPhotosLibraryUsageDescription</key>
 	<string>此应用需要访问照片库以导入图片文件</string>
+	<key>NSCameraUsageDescription</key>
+	<string>此应用需要访问摄像头以拍摄照片</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>此应用需要访问位置信息以提供定位服务</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>此应用需要访问位置信息以提供定位服务</string>
+	<key>NSContactsUsageDescription</key>
+	<string>此应用需要访问联系人以提供相关功能</string>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>mailto</string>

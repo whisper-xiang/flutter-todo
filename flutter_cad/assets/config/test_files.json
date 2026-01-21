@@ -41,11 +41,6 @@
       "description": "PowerPoint测试"
     },
     {
-      "path": "assets/test_files/file_example_JPG_100kB.jpg",
-      "category": "图片文件",
-      "description": "JPG图片测试"
-    },
-    {
       "path": "assets/test_files/file_example_PNG_500kB.png",
       "category": "图片文件",
       "description": "PNG图片测试"

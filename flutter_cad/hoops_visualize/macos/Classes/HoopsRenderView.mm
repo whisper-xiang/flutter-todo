@@ -67,9 +67,9 @@
         // 将View附加到Canvas
         _canvas.AttachViewAsLayout(_view);
         
-        // 设置背景色
+        // 设置背景色 - 浅蓝色
         _view.GetSegmentKey().GetMaterialMappingControl()
-            .SetWindowColor(HPS::RGBAColor(0.14f, 0.14f, 0.16f, 1.0f));
+            .SetWindowColor(HPS::RGBAColor(0.85f, 0.9f, 0.95f, 1.0f));
         
         // 设置默认相机
         _view.GetSegmentKey().GetCameraControl()
@@ -243,11 +243,26 @@
                         
                         // 由于MTL文件中Kd都是0.00 0.00 0.00，需要设置备用颜色
                         try {
-                            // 为模型段设置备用颜色
-                            modelSegment.GetMaterialMappingControl().SetFaceColor(HPS::RGBAColor(0.8, 0.8, 0.8, 1));
-                            modelSegment.GetMaterialMappingControl().SetBackFaceColor(HPS::RGBAColor(0.8, 0.8, 0.8, 1));
+                            // 递归设置所有段的颜色
+                            std::function<void(HPS::SegmentKey)> setSegmentColor = [&](HPS::SegmentKey segment) {
+                                // 设置当前段的颜色
+                                segment.GetMaterialMappingControl().SetFaceColor(HPS::RGBAColor(0.8, 0.8, 0.8, 1));
+                                segment.GetMaterialMappingControl().SetBackFaceColor(HPS::RGBAColor(0.8, 0.8, 0.8, 1));
+                                
+                                // 获取所有子段
+                                HPS::SegmentKeyArray subSegments;
+                                segment.ShowSubsegments(subSegments);
+                                
+                                // 递归处理子段
+                                for (auto const& subSeg : subSegments) {
+                                    setSegmentColor(subSeg);
+                                }
+                            };
                             
-                            NSLog(@"Set fallback colors for missing textures");
+                            // 从模型段开始递归设置
+                            setSegmentColor(modelSegment);
+                            
+                            NSLog(@"Set fallback colors for all segments");
                         } catch (...) {
                             NSLog(@"Failed to set fallback colors");
                         }

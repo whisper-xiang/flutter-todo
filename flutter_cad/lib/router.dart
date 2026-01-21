@@ -18,6 +18,8 @@ import 'screens/local_files_screen.dart';
 import 'screens/preview_screen.dart';
 import 'screens/native_preview_screen.dart';
 import 'screens/hoops_preview_screen.dart';
+import 'screens/dwg_preview_screen.dart';
+import 'screens/enhanced_preview_screen.dart';
 
 final router = GoRouter(
   initialLocation: '/home',
@@ -94,6 +96,24 @@ final router = GoRouter(
         final file = state.extra as CadFile;
         return CupertinoPage(
           child: HoopsPreviewScreen(id: id, file: file),
+        );
+      },
+    ),
+    GoRoute(
+      path: '/dwg-preview/:id',
+      pageBuilder: (context, state) {
+        final file = state.extra as CadFile;
+        return CupertinoPage(
+          child: DwgPreviewScreen(cadFile: file),
+        );
+      },
+    ),
+    GoRoute(
+      path: '/enhanced-preview/:id',
+      pageBuilder: (context, state) {
+        final file = state.extra as CadFile;
+        return CupertinoPage(
+          child: EnhancedPreviewScreen(file: file),
         );
       },
     ),

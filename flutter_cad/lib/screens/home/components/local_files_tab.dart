@@ -1,8 +1,8 @@
 /*
  * @Author: 轻语 243267674@qq.com
  * @Date: 2025-12-24 15:37:54
- * @LastEditors: 轻语
- * @LastEditTime: 2026-01-20 14:29:28
+ * @LastEditors: 轻语 243267674@qq.com
+ * @LastEditTime: 2026-01-21 16:52:15
  */
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -58,14 +58,61 @@ class _LocalFilesTabState extends State<LocalFilesTab>
       final allFiles = [...files, ...assetsFiles];
       print('总文件数量: ${allFiles.length}');
 
-      // 打印所有文件名用于调试
+      // 按文件扩展名去重，每种格式只保留一个文件
+      final Map<String, File> uniqueFiles = {};
       for (final file in allFiles) {
+        final fileName = file.path.split('/').last;
+        final extension = fileName.split('.').last.toLowerCase();
+        
+        // 优先级：assets文件 > 本地文件
+        // 如果该扩展名还没有文件，或者当前文件是assets文件而现有文件不是assets文件
+        if (!uniqueFiles.containsKey(extension)) {
+          uniqueFiles[extension] = file;
+        } else {
+          final existingFile = uniqueFiles[extension]!;
+          // 如果当前文件是assets文件而现有文件不是，则替换
+          if (file.path.contains('assets') && !existingFile.path.contains('assets')) {
+            uniqueFiles[extension] = file;
+          }
+        }
+      }
+
+      // 按文件类型重要性排序
+      final List<String> typeOrder = [
+        'dwg', 'dxf', 'ocf', 'obj', 'hsf', // CAD文件
+        'pdf', // PDF文件
+        'jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', // 图片文件
+        'mp4', 'avi', 'mov', 'wmv', 'flv', 'mkv', 'webm', // 视频文件
+        'mp3', 'wav', 'flac', 'aac', 'm4a', 'ogg', // 音频文件
+        'txt', 'md', 'json', 'xml', 'html', 'htm', 'csv', // 文本文件
+        'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', // Office文档
+        'zip', 'rar', '7z', 'tar', 'gz', // 压缩文件
+        'psd', 'ai', 'sketch', 'fig', 'epub', 'mobi', // 其他文件
+      ];
+
+      final deduplicatedFiles = <File>[];
+      for (final type in typeOrder) {
+        if (uniqueFiles.containsKey(type)) {
+          deduplicatedFiles.add(uniqueFiles[type]!);
+        }
+      }
+      
+      // 添加不在预定义顺序中的文件
+      for (final entry in uniqueFiles.entries) {
+        if (!typeOrder.contains(entry.key)) {
+          deduplicatedFiles.add(entry.value);
+        }
+      }
+      print('去重后文件数量: ${deduplicatedFiles.length}');
+
+      // 打印去重后的文件名用于调试
+      for (final file in deduplicatedFiles) {
         print('文件: ${file.path.split('/').last}');
       }
 
       if (mounted) {
         setState(() {
-          _recentFiles = allFiles.toList();
+          _recentFiles = deduplicatedFiles;
           _isLoading = false;
         });
       }
@@ -111,6 +158,44 @@ class _LocalFilesTabState extends State<LocalFilesTab>
       'webp',
     ].contains(extension)) {
       fileType = FileType.image;
+    } else if ([
+      'mp4',
+      'avi',
+      'mov',
+      'wmv',
+      'flv',
+      'mkv',
+      'webm',
+    ].contains(extension)) {
+      fileType = FileType.video;
+    } else if ([
+      'mp3',
+      'wav',
+      'flac',
+      'aac',
+      'm4a',
+      'ogg',
+    ].contains(extension)) {
+      fileType = FileType.audio;
+    } else if ([
+      'txt',
+      'md',
+      'json',
+      'xml',
+      'html',
+      'htm',
+      'csv',
+    ].contains(extension)) {
+      fileType = FileType.text;
+    } else if ([
+      'doc',
+      'docx',
+      'xls',
+      'xlsx',
+      'ppt',
+      'pptx',
+    ].contains(extension)) {
+      fileType = FileType.document;
     } else {
       fileType = FileType.unknown;
     }
@@ -126,20 +211,50 @@ class _LocalFilesTabState extends State<LocalFilesTab>
     );
 
     if (mounted) {
-      // CAD文件使用HOOPS预览，其他文件使用普通预览
-      if (fileType == FileType.cad2d || fileType == FileType.cad3d) {
+      // 根据文件类型进行不同的处理
+      if (fileType == FileType.cad2d && extension == 'dwg') {
+        // DWG文件使用WebView预览
+        context.push('/dwg-preview/$fileId', extra: cadFile);
+      } else if (fileType == FileType.cad2d || fileType == FileType.cad3d) {
+        // 其他CAD文件使用HOOPS预览
         context.push('/hoops-preview/$fileId', extra: cadFile);
+      } else if (fileType == FileType.image || fileType == FileType.text || fileType == FileType.video || fileType == FileType.audio) {
+        // Flutter原生支持的文件类型使用增强预览
+        context.push('/enhanced-preview/$fileId', extra: cadFile);
+      } else if (fileType == FileType.pdf) {
+        // PDF文件使用增强预览（暂时显示占位符）
+        context.push('/enhanced-preview/$fileId', extra: cadFile);
+      } else if (fileType == FileType.document) {
+        // 文档文件暂不支持
+        _showUnsupportedFormatDialog('Office文档', '暂不支持Office文档预览，将逐步添加相关插件');
       } else {
-        context.push('/preview/$fileId', extra: cadFile);
+        // 未知格式
+        _showUnsupportedFormatDialog('未知格式', '暂不支持此文件格式预览');
       }
     }
+  }
+
+  void _showUnsupportedFormatDialog(String format, String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('$format预览'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('确定'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('本地文件'),
+        title: const Text('文件预览'),
         leading: IconButton(
           icon: const CircleAvatar(
             backgroundColor: Colors.teal,
@@ -204,9 +319,9 @@ class _LocalFilesTabState extends State<LocalFilesTab>
           children: [
             Icon(Icons.folder_open, size: 64, color: Colors.grey),
             const SizedBox(height: 16),
-            const Text('暂无本地文件', style: TextStyle(color: Colors.grey)),
+            const Text('暂无文件', style: TextStyle(color: Colors.grey)),
             const SizedBox(height: 8),
-            Text('点击右上角导入按钮添加文件', style: TextStyle(color: Colors.grey)),
+            Text('已按文件类型去重显示', style: TextStyle(color: Colors.grey)),
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () => context.push('/local'),
