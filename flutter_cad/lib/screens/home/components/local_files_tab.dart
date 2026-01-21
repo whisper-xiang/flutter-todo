@@ -2,7 +2,7 @@
  * @Author: 轻语 243267674@qq.com
  * @Date: 2025-12-24 15:37:54
  * @LastEditors: 轻语 243267674@qq.com
- * @LastEditTime: 2026-01-21 16:52:15
+ * @LastEditTime: 2026-01-21 17:11:33
  */
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -218,11 +218,11 @@ class _LocalFilesTabState extends State<LocalFilesTab>
       } else if (fileType == FileType.cad2d || fileType == FileType.cad3d) {
         // 其他CAD文件使用HOOPS预览
         context.push('/hoops-preview/$fileId', extra: cadFile);
+      } else if (fileType == FileType.pdf) {
+        // PDF文件使用专门的PDF预览页面
+        context.push('/pdf-preview/$fileId', extra: cadFile);
       } else if (fileType == FileType.image || fileType == FileType.text || fileType == FileType.video || fileType == FileType.audio) {
         // Flutter原生支持的文件类型使用增强预览
-        context.push('/enhanced-preview/$fileId', extra: cadFile);
-      } else if (fileType == FileType.pdf) {
-        // PDF文件使用增强预览（暂时显示占位符）
         context.push('/enhanced-preview/$fileId', extra: cadFile);
       } else if (fileType == FileType.document) {
         // 文档文件暂不支持

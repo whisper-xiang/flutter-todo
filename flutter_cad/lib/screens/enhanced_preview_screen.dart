@@ -34,8 +34,6 @@ class _EnhancedPreviewScreenState extends State<EnhancedPreviewScreen> {
         await _loadImage();
       } else if (widget.file.type == FileType.text) {
         await _loadText();
-      } else if (widget.file.type == FileType.pdf) {
-        await _loadPdf();
       } else if (widget.file.type == FileType.video) {
         await _loadVideo();
       } else if (widget.file.type == FileType.audio) {
@@ -74,14 +72,6 @@ class _EnhancedPreviewScreenState extends State<EnhancedPreviewScreen> {
         _isLoading = false;
       });
     }
-  }
-
-  Future<void> _loadPdf() async {
-    // PDF预览需要额外的插件，这里显示占位符
-    setState(() {
-      _error = 'PDF预览需要插件支持，将逐步添加';
-      _isLoading = false;
-    });
   }
 
   Future<void> _loadVideo() async {

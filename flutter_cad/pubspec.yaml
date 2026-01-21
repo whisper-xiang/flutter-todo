@@ -57,6 +57,7 @@ dependencies:
   vibration: ^1.8.4
   hoops_visualize:
     path: ./hoops_visualize
+  syncfusion_flutter_pdfviewer: ^28.1.37
 
 dev_dependencies:
   flutter_test:

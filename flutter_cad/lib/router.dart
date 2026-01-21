@@ -20,6 +20,7 @@ import 'screens/native_preview_screen.dart';
 import 'screens/hoops_preview_screen.dart';
 import 'screens/dwg_preview_screen.dart';
 import 'screens/enhanced_preview_screen.dart';
+import 'screens/pdf_preview_screen.dart';
 
 final router = GoRouter(
   initialLocation: '/home',
@@ -114,6 +115,15 @@ final router = GoRouter(
         final file = state.extra as CadFile;
         return CupertinoPage(
           child: EnhancedPreviewScreen(file: file),
+        );
+      },
+    ),
+    GoRoute(
+      path: '/pdf-preview/:id',
+      pageBuilder: (context, state) {
+        final file = state.extra as CadFile;
+        return CupertinoPage(
+          child: PdfPreviewScreen(file: file),
         );
       },
     ),
