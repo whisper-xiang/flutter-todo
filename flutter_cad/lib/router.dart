@@ -11,7 +11,7 @@ import 'package:flutter/cupertino.dart';
 import 'providers/auth_provider.dart';
 import 'models/cad_file.dart';
 import 'screens/login_screen.dart';
-// import 'screens/home_screen.dart';
+// import 'screens/home_screen.dart'
 import 'screens/home/index.dart';
 import 'screens/cloud_files_screen.dart';
 import 'screens/local_files_screen.dart';
@@ -21,6 +21,11 @@ import 'screens/hoops_preview_screen.dart';
 import 'screens/dwg_preview_screen.dart';
 import 'screens/enhanced_preview_screen.dart';
 import 'screens/pdf_preview_screen.dart';
+import 'screens/simple_video_screen.dart';
+import 'screens/audio_preview_screen.dart';
+import 'screens/word_preview_screen.dart';
+import 'screens/excel_preview_screen.dart';
+import 'screens/ppt_preview_screen.dart';
 
 final router = GoRouter(
   initialLocation: '/home',
@@ -124,6 +129,51 @@ final router = GoRouter(
         final file = state.extra as CadFile;
         return CupertinoPage(
           child: PdfPreviewScreen(file: file),
+        );
+      },
+    ),
+    GoRoute(
+      path: '/video-preview/:id',
+      pageBuilder: (context, state) {
+        final file = state.extra as CadFile;
+        return CupertinoPage(
+          child: SimpleVideoScreen(file: file),
+        );
+      },
+    ),
+    GoRoute(
+      path: '/audio-preview/:id',
+      pageBuilder: (context, state) {
+        final file = state.extra as CadFile;
+        return CupertinoPage(
+          child: AudioPreviewScreen(file: file),
+        );
+      },
+    ),
+    GoRoute(
+      path: '/word-preview/:id',
+      pageBuilder: (context, state) {
+        final file = state.extra as CadFile;
+        return CupertinoPage(
+          child: WordPreviewScreen(file: file),
+        );
+      },
+    ),
+    GoRoute(
+      path: '/excel-preview/:id',
+      pageBuilder: (context, state) {
+        final file = state.extra as CadFile;
+        return CupertinoPage(
+          child: ExcelPreviewScreen(file: file),
+        );
+      },
+    ),
+    GoRoute(
+      path: '/ppt-preview/:id',
+      pageBuilder: (context, state) {
+        final file = state.extra as CadFile;
+        return CupertinoPage(
+          child: PptPreviewScreen(file: file),
         );
       },
     ),

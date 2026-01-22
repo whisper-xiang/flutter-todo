@@ -2,7 +2,7 @@
  * @Author: 轻语 243267674@qq.com
  * @Date: 2025-12-24 15:37:54
  * @LastEditors: 轻语 243267674@qq.com
- * @LastEditTime: 2026-01-21 17:11:33
+ * @LastEditTime: 2026-01-21 17:27:01
  */
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -221,12 +221,28 @@ class _LocalFilesTabState extends State<LocalFilesTab>
       } else if (fileType == FileType.pdf) {
         // PDF文件使用专门的PDF预览页面
         context.push('/pdf-preview/$fileId', extra: cadFile);
-      } else if (fileType == FileType.image || fileType == FileType.text || fileType == FileType.video || fileType == FileType.audio) {
+      } else if (fileType == FileType.video) {
+        // 视频文件使用专门的视频预览页面
+        context.push('/video-preview/$fileId', extra: cadFile);
+      } else if (fileType == FileType.audio) {
+        // 音频文件使用专门的音频播放页面
+        context.push('/audio-preview/$fileId', extra: cadFile);
+      } else if (fileType == FileType.document) {
+        // 检查文档类型
+        final extension = cadFile.name.split('.').last.toLowerCase();
+        if (['xls', 'xlsx'].contains(extension)) {
+          // Excel文件使用专门的预览页面
+          context.push('/excel-preview/$fileId', extra: cadFile);
+        } else if (['ppt', 'pptx'].contains(extension)) {
+          // PowerPoint文件使用专门的预览页面
+          context.push('/ppt-preview/$fileId', extra: cadFile);
+        } else {
+          // Word文档使用专门的预览页面
+          context.push('/word-preview/$fileId', extra: cadFile);
+        }
+      } else if (fileType == FileType.image || fileType == FileType.text) {
         // Flutter原生支持的文件类型使用增强预览
         context.push('/enhanced-preview/$fileId', extra: cadFile);
-      } else if (fileType == FileType.document) {
-        // 文档文件暂不支持
-        _showUnsupportedFormatDialog('Office文档', '暂不支持Office文档预览，将逐步添加相关插件');
       } else {
         // 未知格式
         _showUnsupportedFormatDialog('未知格式', '暂不支持此文件格式预览');

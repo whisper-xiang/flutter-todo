@@ -56,14 +56,29 @@
       "description": "WEBP图片测试"
     },
     {
-      "path": "assets/test_files/file_example_OGG_480_1_7mg.ogg",
+      "path": "assets/test_files/file_example_MP3.mp3",
       "category": "音频文件",
-      "description": "OGG音频测试"
+      "description": "MP3音频测试（推荐格式）"
+    },
+    {
+      "path": "assets/test_files/file_example_AAC.m4a",
+      "category": "音频文件",
+      "description": "AAC音频测试（Excel教程音频）"
+    },
+    {
+      "path": "assets/test_files/file_example_WAV.wav",
+      "category": "音频文件",
+      "description": "WAV音频测试（无损格式）"
+    },
+    {
+      "path": "assets/test_files/file_example_MP4.mp4",
+      "category": "视频文件",
+      "description": "MP4视频测试（推荐格式）"
     },
     {
       "path": "assets/test_files/file_example_AVI_480_750kB.avi",
       "category": "视频文件",
-      "description": "AVI视频测试"
+      "description": "AVI视频测试（iOS模拟器可能不支持）"
     },
     {
       "path": "assets/test_files/file_example_WEBM_480_900KB.webm",

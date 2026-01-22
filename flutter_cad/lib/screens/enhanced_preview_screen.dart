@@ -34,8 +34,6 @@ class _EnhancedPreviewScreenState extends State<EnhancedPreviewScreen> {
         await _loadImage();
       } else if (widget.file.type == FileType.text) {
         await _loadText();
-      } else if (widget.file.type == FileType.video) {
-        await _loadVideo();
       } else if (widget.file.type == FileType.audio) {
         await _loadAudio();
       } else {
@@ -69,15 +67,6 @@ class _EnhancedPreviewScreenState extends State<EnhancedPreviewScreen> {
       final content = await file.readAsString();
       setState(() {
         _content = content;
-        _isLoading = false;
-      });
-    }
-  }
-
-  Future<void> _loadVideo() async {
-    if (widget.file.path != null) {
-      setState(() {
-        _content = widget.file.path;
         _isLoading = false;
       });
     }
@@ -127,8 +116,6 @@ class _EnhancedPreviewScreenState extends State<EnhancedPreviewScreen> {
       return _buildImageViewer();
     } else if (widget.file.type == FileType.text) {
       return _buildTextViewer();
-    } else if (widget.file.type == FileType.video) {
-      return _buildVideoViewer();
     } else if (widget.file.type == FileType.audio) {
       return _buildAudioViewer();
     }
@@ -157,24 +144,6 @@ class _EnhancedPreviewScreenState extends State<EnhancedPreviewScreen> {
           fontFamily: 'monospace',
           fontSize: 14,
         ),
-      ),
-    );
-  }
-
-  Widget _buildVideoViewer() {
-    final videoPath = _content as String;
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.videocam, size: 64, color: Colors.grey),
-          const SizedBox(height: 16),
-          Text('视频文件: ${widget.file.name}'),
-          const SizedBox(height: 8),
-          Text('路径: $videoPath', style: const TextStyle(color: Colors.grey)),
-          const SizedBox(height: 16),
-          const Text('视频播放器插件开发中...'),
-        ],
       ),
     );
   }
