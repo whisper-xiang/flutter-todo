@@ -7,7 +7,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:camera/camera.dart';
-import 'package:record/record.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:image_picker/image_picker.dart';
@@ -50,15 +49,6 @@ class _CloudFilesTabState extends State<CloudFilesTab> {
   String _storageStatus = '未检查';
   StreamSubscription<AccelerometerEvent>? _accelerometerSubscription;
   StreamSubscription<GyroscopeEvent>? _gyroscopeSubscription;
-
-  // 录制功能状态
-  bool _isRecordingVideo = false;
-  bool _isRecordingAudio = false;
-  bool _isStreaming = false;
-  String _recordingStatus = '未开始';
-  final AudioRecorder _audioRecorder = AudioRecorder();
-  String? _videoPath;
-  String? _audioPath;
 
   bool _isStatusBarHidden = false;
   bool _isSystemThemeEnabled = false;
@@ -478,18 +468,6 @@ class _CloudFilesTabState extends State<CloudFilesTab> {
     ).showSnackBar(const SnackBar(content: Text('传感器已停止')));
   }
 
-  Future<void> startRecording() async {
-    try {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('录音功能暂时不可用')));
-    } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('录音失败: $e')));
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final systemCapabilities = [
@@ -539,7 +517,14 @@ class _CloudFilesTabState extends State<CloudFilesTab> {
         'title': '麦克风',
         'subtitle': '状态: $_microphoneStatus',
         'icon': Icons.mic,
-        'onTap': startRecording,
+        'onTap': () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('麦克风功能暂时不可用'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        },
       },
       {
         'title': '震动',
@@ -588,24 +573,6 @@ class _CloudFilesTabState extends State<CloudFilesTab> {
         'subtitle': '分享应用信息',
         'icon': Icons.share,
         'onTap': _shareContent,
-      },
-      {
-        'title': '录制视频',
-        'subtitle': '开始录制视频',
-        'icon': Icons.videocam,
-        'onTap': toggleVideoRecording,
-      },
-      {
-        'title': '录制音频',
-        'subtitle': '开始录制音频',
-        'icon': Icons.mic,
-        'onTap': toggleAudioRecording,
-      },
-      {
-        'title': '开始推流',
-        'subtitle': '开始直播推流',
-        'icon': Icons.live_tv,
-        'onTap': toggleStreaming,
       },
       {
         'title': '显示弹窗',
@@ -693,197 +660,6 @@ class _CloudFilesTabState extends State<CloudFilesTab> {
     );
   }
 
-  // 录制功能方法
-  Future<void> toggleVideoRecording() async {
-    try {
-      if (_isRecordingVideo) {
-        // 停止录制视频
-        setState(() {
-          _isRecordingVideo = false;
-          _recordingStatus = '视频录制已停止';
-        });
-
-        if (_videoPath != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('视频已保存: $_videoPath'),
-              backgroundColor: Colors.green,
-              duration: const Duration(seconds: 3),
-            ),
-          );
-        }
-      } else {
-        // 开始录制视频
-        final cameraStatus = await Permission.camera.request();
-        final micStatus = await Permission.microphone.request();
-
-        if (cameraStatus.isGranted && micStatus.isGranted) {
-          setState(() {
-            _isRecordingVideo = true;
-            _recordingStatus = '正在录制视频...';
-          });
-
-          // 生成视频文件路径
-          final directory = await getTemporaryDirectory();
-          final timestamp = DateTime.now().millisecondsSinceEpoch;
-          _videoPath = '${directory.path}/video_$timestamp.mp4';
-
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('开始录制视频'),
-              backgroundColor: Colors.blue,
-              duration: Duration(seconds: 2),
-            ),
-          );
-
-          // 模拟录制过程（实际应用中需要使用camera控制器）
-          Future.delayed(const Duration(seconds: 5), () {
-            if (_isRecordingVideo) {
-              toggleVideoRecording();
-            }
-          });
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('需要相机和麦克风权限'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('视频录制失败: $e'), backgroundColor: Colors.red),
-      );
-    }
-  }
-
-  Future<void> toggleAudioRecording() async {
-    try {
-      if (_isRecordingAudio) {
-        // 停止录制音频
-        final path = await _audioRecorder.stop();
-
-        setState(() {
-          _isRecordingAudio = false;
-          _recordingStatus = '音频录制已停止';
-          _audioPath = path;
-        });
-
-        if (path != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('音频已保存: $path'),
-              backgroundColor: Colors.green,
-              duration: const Duration(seconds: 3),
-            ),
-          );
-        }
-      } else {
-        // 开始录制音频
-        final micStatus = await Permission.microphone.request();
-
-        if (micStatus.isGranted) {
-          setState(() {
-            _isRecordingAudio = true;
-            _recordingStatus = '正在录制音频...';
-          });
-
-          // 开始录制
-          final directory = await getTemporaryDirectory();
-          final timestamp = DateTime.now().millisecondsSinceEpoch;
-          final path = '${directory.path}/audio_$timestamp.m4a';
-
-          await _audioRecorder.start(
-            const RecordConfig(
-              encoder: AudioEncoder.aacLc,
-              bitRate: 128000,
-              sampleRate: 44100,
-            ),
-            path: path,
-          );
-
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('开始录制音频'),
-              backgroundColor: Colors.blue,
-              duration: Duration(seconds: 2),
-            ),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('需要麦克风权限'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('音频录制失败: $e'), backgroundColor: Colors.red),
-      );
-    }
-  }
-
-  Future<void> toggleStreaming() async {
-    try {
-      if (_isStreaming) {
-        // 停止推流
-        setState(() {
-          _isStreaming = false;
-          _recordingStatus = '推流已停止';
-        });
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('直播推流已停止'),
-            backgroundColor: Colors.orange,
-            duration: Duration(seconds: 3),
-          ),
-        );
-      } else {
-        // 开始推流
-        final cameraStatus = await Permission.camera.request();
-        final micStatus = await Permission.microphone.request();
-
-        if (cameraStatus.isGranted && micStatus.isGranted) {
-          setState(() {
-            _isStreaming = true;
-            _recordingStatus = '正在推流中...';
-          });
-
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('开始直播推流'),
-              backgroundColor: Colors.red,
-              duration: Duration(seconds: 2),
-            ),
-          );
-
-          // 模拟推流过程（实际应用中需要使用RTMP推流库）
-          Future.delayed(const Duration(seconds: 10), () {
-            if (_isStreaming) {
-              toggleStreaming();
-            }
-          });
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('需要相机和麦克风权限'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('推流失败: $e'), backgroundColor: Colors.red),
-      );
-    }
-  }
-
-  // 弹窗和原生控件功能方法
   Future<void> showDialogs() async {
     await showDialog(
       context: context,
