@@ -1,8 +1,8 @@
 /*
  * @Author: 轻语 243267674@qq.com
  * @Date: 2025-12-24 15:37:54
- * @LastEditors: 轻语 243267674@qq.com
- * @LastEditTime: 2026-01-21 16:38:04
+ * @LastEditors: 轻语
+ * @LastEditTime: 2026-01-26 10:47:00
  */
 import 'package:flutter/material.dart';
 import 'components/app_drawer.dart';
@@ -42,7 +42,7 @@ class _HomeScreenState extends State<HomeScreen> {
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.folder), label: '本地文件'),
           BottomNavigationBarItem(icon: Icon(Icons.cloud), label: '系统能力'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: '我的'),
+          // BottomNavigationBarItem(icon: Icon(Icons.person), label: '我的'),
         ],
       ),
       drawer: AppDrawer(scaffoldKey: _scaffoldKey),

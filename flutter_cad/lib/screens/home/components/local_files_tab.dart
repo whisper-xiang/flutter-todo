@@ -7,6 +7,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:path_provider/path_provider.dart';
 import '../../../models/cad_file.dart';
 import '../../../services/file_storage_service.dart';
 import '../../../services/assets_file_service.dart';
@@ -63,7 +64,7 @@ class _LocalFilesTabState extends State<LocalFilesTab>
       for (final file in allFiles) {
         final fileName = file.path.split('/').last;
         final extension = fileName.split('.').last.toLowerCase();
-        
+
         // 优先级：assets文件 > 本地文件
         // 如果该扩展名还没有文件，或者当前文件是assets文件而现有文件不是assets文件
         if (!uniqueFiles.containsKey(extension)) {
@@ -71,7 +72,8 @@ class _LocalFilesTabState extends State<LocalFilesTab>
         } else {
           final existingFile = uniqueFiles[extension]!;
           // 如果当前文件是assets文件而现有文件不是，则替换
-          if (file.path.contains('assets') && !existingFile.path.contains('assets')) {
+          if (file.path.contains('assets') &&
+              !existingFile.path.contains('assets')) {
             uniqueFiles[extension] = file;
           }
         }
@@ -96,7 +98,7 @@ class _LocalFilesTabState extends State<LocalFilesTab>
           deduplicatedFiles.add(uniqueFiles[type]!);
         }
       }
-      
+
       // 添加不在预定义顺序中的文件
       for (final entry in uniqueFiles.entries) {
         if (!typeOrder.contains(entry.key)) {
@@ -279,15 +281,53 @@ class _LocalFilesTabState extends State<LocalFilesTab>
           onPressed: () => widget.scaffoldKey.currentState?.openDrawer(),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.storage),
-            tooltip: '本地文件',
-            onPressed: () => context.push('/local'),
-          ),
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            tooltip: '刷新',
-            onPressed: () => _loadRecentFiles(),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert),
+            onSelected: (value) {
+              switch (value) {
+                case 'app_storage':
+                  _accessAppStorage();
+                  break;
+                case 'local_files':
+                  context.push('/local');
+                  break;
+                case 'refresh':
+                  _loadRecentFiles();
+                  break;
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'app_storage',
+                child: Row(
+                  children: [
+                    Icon(Icons.folder, color: Colors.green),
+                    SizedBox(width: 8),
+                    Text('App存储'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'local_files',
+                child: Row(
+                  children: [
+                    Icon(Icons.storage, color: Colors.orange),
+                    SizedBox(width: 8),
+                    Text('本地文件管理'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'refresh',
+                child: Row(
+                  children: [
+                    Icon(Icons.refresh, color: Colors.grey),
+                    SizedBox(width: 8),
+                    Text('刷新'),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -477,5 +517,180 @@ class _LocalFilesTabState extends State<LocalFilesTab>
     if (bytes < 1024) return '$bytes B';
     if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
     return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+  }
+
+  // 访问App存储
+  Future<void> _accessAppStorage() async {
+    try {
+      // 获取应用文档目录
+      Directory? appDocDir = await getApplicationDocumentsDirectory();
+      Directory? appTempDir = await getTemporaryDirectory();
+
+      if (Platform.isAndroid) {
+        Directory? externalDir = await getExternalStorageDirectory();
+
+        _showStorageOptionsDialog(
+          appDocDir: appDocDir,
+          appTempDir: appTempDir,
+          externalDir: externalDir,
+        );
+      } else {
+        // iOS只显示应用目录选项
+        _showStorageOptionsDialog(
+          appDocDir: appDocDir,
+          appTempDir: appTempDir,
+          externalDir: null,
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('访问App存储失败: $e')));
+    }
+  }
+
+  // 显示存储选项对话框
+  void _showStorageOptionsDialog({
+    required Directory? appDocDir,
+    required Directory? appTempDir,
+    required Directory? externalDir,
+  }) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('App存储目录'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (appDocDir != null)
+                ListTile(
+                  leading: const Icon(Icons.folder, color: Colors.blue),
+                  title: const Text('文档目录'),
+                  subtitle: Text(appDocDir.path),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    _browseDirectory(appDocDir, 'App文档目录');
+                  },
+                ),
+              if (appTempDir != null)
+                ListTile(
+                  leading: const Icon(Icons.folder, color: Colors.orange),
+                  title: const Text('临时目录'),
+                  subtitle: Text(appTempDir.path),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    _browseDirectory(appTempDir, 'App临时目录');
+                  },
+                ),
+              if (externalDir != null)
+                ListTile(
+                  leading: const Icon(Icons.sd_storage, color: Colors.green),
+                  title: const Text('外部存储'),
+                  subtitle: Text(externalDir.path),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    _browseDirectory(externalDir, '外部存储');
+                  },
+                ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('取消'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // 浏览目录
+  Future<void> _browseDirectory(Directory directory, String title) async {
+    try {
+      List<FileSystemEntity> files = directory.listSync();
+      List<File> accessibleFiles = [];
+
+      for (var file in files) {
+        if (file is File) {
+          String fileName = file.path.split('/').last;
+          String extension = fileName.split('.').last.toLowerCase();
+
+          // 只显示支持的文件类型
+          if (_isSupportedFileType(extension)) {
+            accessibleFiles.add(file);
+          }
+        }
+      }
+
+      if (accessibleFiles.isNotEmpty) {
+        _showSelectedFilesDialog(accessibleFiles, title);
+      } else {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('该目录中没有支持的文件类型')));
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('浏览目录失败: $e')));
+    }
+  }
+
+  // 检查是否为支持的文件类型
+  bool _isSupportedFileType(String extension) {
+    return [
+      'dwg', 'dxf', 'ocf', 'obj', 'hsf', // CAD文件
+      'pdf', // PDF文件
+      'jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', // 图片文件
+      'mp4', 'avi', 'mov', 'wmv', 'flv', 'mkv', 'webm', // 视频文件
+      'mp3', 'wav', 'flac', 'aac', 'm4a', 'ogg', // 音频文件
+      'txt', 'md', 'json', 'xml', 'html', 'htm', 'csv', // 文本文件
+      'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', // Office文档
+      'zip', 'rar', '7z', 'tar', 'gz', // 压缩文件
+    ].contains(extension);
+  }
+
+  // 显示选中文件的对话框
+  void _showSelectedFilesDialog(List<File> files, String source) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('$source (${files.length}个文件)'),
+          content: SizedBox(
+            width: double.maxFinite,
+            height: 300,
+            child: ListView.builder(
+              itemCount: files.length,
+              itemBuilder: (context, index) {
+                final file = files[index];
+                final fileName = file.path.split('/').last;
+                return ListTile(
+                  leading: Icon(
+                    _getFileIcon(fileName),
+                    color: _getFileIconColor(fileName),
+                  ),
+                  title: Text(fileName),
+                  subtitle: Text(_formatFileSize(file.lengthSync())),
+                  trailing: const Icon(Icons.open_in_new),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    _openFileWithNative(file);
+                  },
+                );
+              },
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('关闭'),
+            ),
+          ],
+        );
+      },
+    );
   }
 }

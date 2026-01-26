@@ -1,8 +1,8 @@
 /*
  * @Author: 轻语 243267674@qq.com
  * @Date: 2025-12-24 15:37:54
- * @LastEditors: 轻语 243267674@qq.com
- * @LastEditTime: 2026-01-22 15:44:50
+ * @LastEditors: 轻语
+ * @LastEditTime: 2026-01-26 10:40:46
  */
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -16,7 +16,6 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 import 'package:torch_light/torch_light.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:app_settings/app_settings.dart';
 import 'package:vibration/vibration.dart';
 import '../../../utils/permission_debug_helper.dart';
@@ -34,7 +33,7 @@ class CloudFilesTab extends StatefulWidget {
 
 class _CloudFilesTabState extends State<CloudFilesTab> {
   List<CameraDescription> cameras = [];
-  String _locationStatus = '未知';
+  String _locationStatus = '未检查';
   String _deviceInfo = '未知';
   String _appInfo = '未知';
   String _cameraStatus = '未检查';
@@ -45,8 +44,6 @@ class _CloudFilesTabState extends State<CloudFilesTab> {
   String _flashlightStatus = '未检查';
   // 震动功能状态
   String _vibrationStatus = '未检查';
-  String _microphoneStatus = '未检查';
-  String _storageStatus = '未检查';
   StreamSubscription<AccelerometerEvent>? _accelerometerSubscription;
   StreamSubscription<GyroscopeEvent>? _gyroscopeSubscription;
 
@@ -76,13 +73,9 @@ class _CloudFilesTabState extends State<CloudFilesTab> {
   }
 
   Future<void> _checkPermissions() async {
-    await _getLocation();
-    await _getDeviceInfo();
-    await _getAppInfo();
-    await _getContacts();
-    await _getStorageInfo();
+    await _getDeviceInfo(showInfoDialog: false);
+    await _getAppInfo(showInfoDialog: false);
     await _checkFlashlight();
-    await _checkMicrophone();
   }
 
   @override
@@ -96,46 +89,367 @@ class _CloudFilesTabState extends State<CloudFilesTab> {
 
   Future<void> _getLocation() async {
     try {
+      print('=== 开始获取GPS位置 ===');
+
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      print('位置服务状态: $serviceEnabled');
+
       if (!serviceEnabled) {
-        setState(() {
-          _locationStatus = 'GPS服务未启用';
-        });
+        print('位置服务未启用，显示弹框');
+        _showLocationServiceDisabledDialog();
         return;
       }
 
       LocationPermission permission = await Geolocator.checkPermission();
+      print('位置权限状态: $permission');
+
       if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
-          setState(() {
-            _locationStatus = 'GPS权限被拒绝';
-          });
-          return;
-        } else if (permission == LocationPermission.deniedForever) {
-          _showSettingsDialog('位置');
-          setState(() {
-            _locationStatus = 'GPS权限被永久拒绝';
-          });
-          return;
-        }
+        print('位置权限被拒绝，显示权限申请弹框');
+        _showLocationPermissionDialog();
+        return;
+      } else if (permission == LocationPermission.deniedForever) {
+        print('位置权限被永久拒绝，显示设置引导弹框');
+        _showLocationPermissionPermanentlyDeniedDialog();
+        return;
       }
 
-      Position position = await Geolocator.getCurrentPosition();
-      setState(() {
-        _locationStatus =
-            '纬度: ${position.latitude.toStringAsFixed(6)}, 经度: ${position.longitude.toStringAsFixed(6)}';
-      });
+      // 权限已获得，获取位置
+      print('权限已获得，开始获取位置');
+      await _getCurrentLocation();
     } catch (e) {
+      print('GPS获取异常: $e');
       setState(() {
         _locationStatus = 'GPS错误: $e';
       });
     }
   }
 
-  Future<void> _getDeviceInfo() async {
+  Future<void> _getCurrentLocation() async {
+    try {
+      print('开始获取当前位置...');
+      Position position = await Geolocator.getCurrentPosition();
+      print('获取位置成功: 纬度=${position.latitude}, 经度=${position.longitude}');
+      setState(() {
+        _locationStatus =
+            '纬度: ${position.latitude.toStringAsFixed(6)}, 经度: ${position.longitude.toStringAsFixed(6)}';
+      });
+    } catch (e) {
+      print('获取位置失败: $e');
+      setState(() {
+        _locationStatus = 'GPS错误: $e';
+      });
+    }
+  }
+
+  void _showLocationServiceDisabledDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('位置服务未启用'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('您的设备位置服务未启用，无法获取GPS位置信息。'),
+              SizedBox(height: 16),
+              Text('请按照以下步骤启用位置服务：'),
+              SizedBox(height: 8),
+              if (Platform.isAndroid) ...[
+                Text('1. 打开设备"设置"'),
+                Text('2. 进入"位置信息"'),
+                Text('3. 开启"位置服务"开关'),
+                Text('4. 返回应用重试'),
+              ] else if (Platform.isIOS) ...[
+                Text('1. 打开设备"设置"'),
+                Text('2. 进入"隐私与安全性"'),
+                Text('3. 选择"位置服务"'),
+                Text('4. 开启位置服务'),
+                Text('5. 返回应用重试'),
+              ],
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('确定'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _openLocationSettings();
+              },
+              child: const Text('打开设置'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showLocationPermissionDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('需要位置权限'),
+          content: const Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('应用需要位置权限来获取GPS定位信息。'),
+              SizedBox(height: 16),
+              Text('请授予位置权限以继续使用此功能。'),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('取消'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _requestLocationPermission();
+              },
+              child: const Text('授予权限'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showLocationPermissionPermanentlyDeniedDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('位置权限被永久拒绝'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('您之前永久拒绝了位置权限申请。'),
+              const SizedBox(height: 16),
+              const Text('要重新启用位置权限，请按照以下步骤操作：'),
+              const SizedBox(height: 8),
+              if (Platform.isAndroid) ...[
+                Text('1. 打开设备"设置"'),
+                Text('2. 进入"应用"或"应用管理"'),
+                Text('3. 找到此应用'),
+                Text('4. 选择"权限"'),
+                Text('5. 找到"位置"权限'),
+                Text('6. 选择"允许"'),
+                Text('7. 返回应用重试'),
+              ] else if (Platform.isIOS) ...[
+                Text('1. 打开设备"设置"'),
+                Text('2. 进入"隐私与安全性"'),
+                Text('3. 选择"位置服务"'),
+                Text('4. 找到此应用'),
+                Text('5. 将位置权限改为"允许"'),
+                Text('6. 返回应用重试'),
+              ],
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('取消'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _openLocationSettings();
+              },
+              child: const Text('打开设置'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _requestLocationPermission() async {
+    try {
+      LocationPermission permission = await Geolocator.requestPermission();
+
+      if (permission == LocationPermission.whileInUse) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('位置权限已授予'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        // 权限获得后获取位置
+        await _getCurrentLocation();
+      } else if (permission == LocationPermission.denied) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('位置权限被拒绝'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      } else if (permission == LocationPermission.deniedForever) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('位置权限被永久拒绝'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('权限请求失败: $e'), backgroundColor: Colors.red),
+      );
+    }
+  }
+
+  Future<void> _openLocationSettings() async {
+    try {
+      // 尝试打开应用设置页面
+      if (Platform.isAndroid) {
+        // Android: 打开应用详情页面
+        final settingsUri = Uri.parse(
+          'android.settings.APPLICATION_DETAILS_SETTINGS',
+        );
+        if (await canLaunchUrl(settingsUri)) {
+          await launchUrl(settingsUri);
+        } else {
+          // 备选方案：打开系统设置的位置页面
+          final locationSettingsUri = Uri.parse(
+            'android.settings.LOCATION_SOURCE_SETTINGS',
+          );
+          if (await canLaunchUrl(locationSettingsUri)) {
+            await launchUrl(locationSettingsUri);
+          } else {
+            // 最后备选：打开系统设置
+            final systemSettingsUri = Uri.parse('android.settings.SETTINGS');
+            if (await canLaunchUrl(systemSettingsUri)) {
+              await launchUrl(systemSettingsUri);
+            }
+          }
+        }
+      } else if (Platform.isIOS) {
+        // iOS: 打开应用设置
+        final settingsUri = Uri.parse('App-Prefs:');
+        if (await canLaunchUrl(settingsUri)) {
+          await launchUrl(settingsUri);
+        }
+      }
+    } catch (e) {
+      print('打开设置失败: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('无法打开设置: $e'), backgroundColor: Colors.red),
+      );
+    }
+  }
+
+  Future<void> _getDeviceInfo({bool showInfoDialog = true}) async {
     try {
       DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+
+      if (showInfoDialog) {
+        // 显示设备信息弹框
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return FutureBuilder(
+              future: _getDeviceDetails(deviceInfo),
+              builder: (context, AsyncSnapshot<Map<String, String>> snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const AlertDialog(
+                    title: Text('设备信息'),
+                    content: Center(child: CircularProgressIndicator()),
+                  );
+                }
+
+                if (snapshot.hasError) {
+                  return AlertDialog(
+                    title: const Text('设备信息'),
+                    content: Text('获取失败: ${snapshot.error}'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: const Text('确定'),
+                      ),
+                    ],
+                  );
+                }
+
+                final deviceDetails = snapshot.data!;
+
+                return AlertDialog(
+                  title: const Text('设备信息'),
+                  content: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (Platform.isIOS) ...[
+                          Text('设备型号: ${deviceDetails['model']}'),
+                          const SizedBox(height: 8),
+                          Text('系统版本: ${deviceDetails['systemVersion']}'),
+                          const SizedBox(height: 8),
+                          Text('设备名称: ${deviceDetails['name']}'),
+                          const SizedBox(height: 8),
+                          Text('系统名称: ${deviceDetails['systemName']}'),
+                          const SizedBox(height: 8),
+                          Text('本地化模型: ${deviceDetails['localizedModel']}'),
+                          const SizedBox(height: 8),
+                          Text(
+                            '唯一标识符: ${deviceDetails['identifierForVendor']}',
+                          ),
+                        ] else if (Platform.isAndroid) ...[
+                          Text('品牌: ${deviceDetails['brand']}'),
+                          const SizedBox(height: 8),
+                          Text('型号: ${deviceDetails['model']}'),
+                          const SizedBox(height: 8),
+                          Text('设备名称: ${deviceDetails['device']}'),
+                          const SizedBox(height: 8),
+                          Text('产品名称: ${deviceDetails['product']}'),
+                          const SizedBox(height: 8),
+                          Text('系统版本: ${deviceDetails['version']}'),
+                          const SizedBox(height: 8),
+                          Text('SDK版本: ${deviceDetails['sdkInt']}'),
+                          const SizedBox(height: 8),
+                          Text('硬件制造商: ${deviceDetails['manufacturer']}'),
+                          const SizedBox(height: 8),
+                          Text('主板: ${deviceDetails['board']}'),
+                          const SizedBox(height: 8),
+                          Text('引导程序: ${deviceDetails['bootloader']}'),
+                          const SizedBox(height: 8),
+                          Text('显示: ${deviceDetails['display']}'),
+                          const SizedBox(height: 8),
+                          Text('指纹: ${deviceDetails['fingerprint']}'),
+                          const SizedBox(height: 8),
+                          Text('硬件: ${deviceDetails['hardware']}'),
+                          const SizedBox(height: 8),
+                          Text('主机: ${deviceDetails['host']}'),
+                          const SizedBox(height: 8),
+                          Text('ID: ${deviceDetails['id']}'),
+                          const SizedBox(height: 8),
+                          Text('类型: ${deviceDetails['type']}'),
+                          const SizedBox(height: 8),
+                          Text('是否为物理设备: ${deviceDetails['isPhysicalDevice']}'),
+                        ],
+                      ],
+                    ),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: const Text('确定'),
+                    ),
+                  ],
+                );
+              },
+            );
+          },
+        );
+      }
+
+      // 更新状态栏显示
       if (Platform.isIOS) {
         IosDeviceInfo iosInfo = await deviceInfo.iosInfo;
         setState(() {
@@ -155,72 +469,85 @@ class _CloudFilesTabState extends State<CloudFilesTab> {
     }
   }
 
-  Future<void> _getAppInfo() async {
+  Future<Map<String, String>> _getDeviceDetails(
+    DeviceInfoPlugin deviceInfo,
+  ) async {
+    if (Platform.isIOS) {
+      IosDeviceInfo iosInfo = await deviceInfo.iosInfo;
+      return {
+        'model': iosInfo.model,
+        'systemVersion': iosInfo.systemVersion,
+        'name': iosInfo.name,
+        'systemName': iosInfo.systemName,
+        'localizedModel': iosInfo.localizedModel,
+        'identifierForVendor': iosInfo.identifierForVendor ?? '未知',
+      };
+    } else if (Platform.isAndroid) {
+      AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
+      return {
+        'brand': androidInfo.brand,
+        'model': androidInfo.model,
+        'device': androidInfo.device,
+        'product': androidInfo.product,
+        'version': androidInfo.version.release,
+        'sdkInt': androidInfo.version.sdkInt.toString(),
+        'manufacturer': androidInfo.manufacturer,
+        'board': androidInfo.board,
+        'bootloader': androidInfo.bootloader,
+        'display': androidInfo.display,
+        'fingerprint': androidInfo.fingerprint,
+        'hardware': androidInfo.hardware,
+        'host': androidInfo.host,
+        'id': androidInfo.id,
+        'type': androidInfo.type,
+        'isPhysicalDevice': androidInfo.isPhysicalDevice.toString(),
+      };
+    } else {
+      return {'platform': Platform.operatingSystem, 'error': '不支持的平台'};
+    }
+  }
+
+  Future<void> _getAppInfo({bool showInfoDialog = true}) async {
     try {
       PackageInfo packageInfo = await PackageInfo.fromPlatform();
+
+      if (showInfoDialog) {
+        // 显示应用信息弹框
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text('应用信息'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('应用名称: ${packageInfo.appName}'),
+                  const SizedBox(height: 8),
+                  Text('版本号: ${packageInfo.version}'),
+                  const SizedBox(height: 8),
+                  Text('构建号: ${packageInfo.buildNumber}'),
+                  const SizedBox(height: 8),
+                  Text('包名: ${packageInfo.packageName}'),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('确定'),
+                ),
+              ],
+            );
+          },
+        );
+      }
+
       setState(() {
         _appInfo = '${packageInfo.appName} v${packageInfo.version}';
       });
     } catch (e) {
       setState(() {
         _appInfo = '获取失败: $e';
-      });
-    }
-  }
-
-  Future<void> _getContacts() async {
-    // 联系人功能已暂时禁用
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('联系人功能暂时不可用'),
-        backgroundColor: Colors.orange,
-      ),
-    );
-  }
-
-  Future<void> _getStorageInfo() async {
-    try {
-      PermissionStatus status = await Permission.storage.request();
-      if (status.isPermanentlyDenied) {
-        // 权限被永久拒绝，引导用户到设置
-        _showSettingsDialog('存储');
-        setState(() {
-          _storageStatus = '权限被永久拒绝';
-        });
-      } else if (status.isGranted) {
-        final appDir = await getApplicationDocumentsDirectory();
-        setState(() {
-          _storageStatus = '可用: ${appDir.path}';
-        });
-      } else {
-        setState(() {
-          _storageStatus = '权限被拒绝';
-        });
-      }
-    } catch (e) {
-      setState(() {
-        _storageStatus = '获取失败: $e';
-      });
-    }
-  }
-
-  Future<void> _checkMicrophone() async {
-    try {
-      PermissionStatus status = await Permission.microphone.request();
-      if (status.isPermanentlyDenied) {
-        // 权限被永久拒绝，引导用户到设置
-        _showSettingsDialog('麦克风');
-        setState(() {
-          _microphoneStatus = '权限被永久拒绝';
-        });
-      } else {
-        setState(() {
-          _microphoneStatus = status.isGranted ? '已授权' : '权限被拒绝';
-        });
-      }
-    } catch (e) {
-      setState(() {
-        _microphoneStatus = '检查失败: $e';
       });
     }
   }
@@ -341,17 +668,159 @@ class _CloudFilesTabState extends State<CloudFilesTab> {
   }
 
   Future<void> _sendEmail() async {
-    const email = 'mailto:test@example.com?subject=测试&body=这是一封测试邮件';
     try {
-      if (await canLaunch(email)) {
-        await launch(email);
+      // 获取应用信息用于邮件内容
+      PackageInfo packageInfo = await PackageInfo.fromPlatform();
+
+      print('尝试发送邮件...');
+
+      // 首先尝试简单的mailto
+      final simpleEmailUri = Uri.parse('mailto:');
+
+      if (await canLaunchUrl(simpleEmailUri)) {
+        // 如果支持mailto，再尝试带内容的版本
+        final subject = Uri.encodeComponent('关于 ${packageInfo.appName} 的反馈');
+        final body = Uri.encodeComponent(
+          '应用名称: ${packageInfo.appName}\n'
+          '版本号: ${packageInfo.version}\n'
+          '构建号: ${packageInfo.buildNumber}\n'
+          '设备平台: ${Platform.operatingSystem}\n\n'
+          '请在此处输入您的反馈内容...\n',
+        );
+
+        final fullEmailUri = Uri.parse(
+          'mailto:support@example.com?subject=$subject&body=$body',
+        );
+
+        print('完整邮件URI: $fullEmailUri');
+
+        if (await canLaunchUrl(fullEmailUri)) {
+          await launchUrl(fullEmailUri);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('已打开邮件应用'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        } else {
+          // 如果完整版本不支持，使用简单版本
+          await launchUrl(simpleEmailUri);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('已打开邮件应用（请手动填写收件人和内容）'),
+              backgroundColor: Colors.orange,
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
       } else {
-        throw '无法发送邮件';
+        // 系统不支持mailto协议
+        _showEmailNotSupportedDialog();
       }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('发送邮件失败: $e')));
+      print('邮件发送失败: $e');
+      _showEmailErrorDialog(e.toString());
+    }
+  }
+
+  void _showEmailNotSupportedDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('邮件功能不可用'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('您的设备似乎没有配置邮件应用。'),
+              const SizedBox(height: 8),
+              const Text('建议解决方案：'),
+              const SizedBox(height: 4),
+              const Text('1. 安装邮件应用（如Gmail、Outlook等）'),
+              const Text('2. 在设置中设置默认邮件应用'),
+              const Text('3. 或者通过其他方式联系我们'),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('确定'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _openEmailAppSettings();
+              },
+              child: const Text('打开设置'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showEmailErrorDialog(String error) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('邮件功能错误'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('打开邮件应用时遇到问题：'),
+              const SizedBox(height: 8),
+              Text('错误信息：$error'),
+              const SizedBox(height: 8),
+              const Text('可能的解决方案：'),
+              const SizedBox(height: 4),
+              const Text('1. 检查是否已安装邮件应用'),
+              const Text('2. 尝试重启应用'),
+              const Text('3. 联系技术支持'),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('确定'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _openEmailAppSettings() async {
+    try {
+      // 尝试打开应用设置页面
+      if (Platform.isAndroid) {
+        // Android: 打开应用详情页面
+        final settingsUri = Uri.parse(
+          'android.settings.APPLICATION_DETAILS_SETTINGS',
+        );
+        if (await canLaunchUrl(settingsUri)) {
+          await launchUrl(settingsUri);
+        } else {
+          // 备选方案：打开系统设置
+          final systemSettingsUri = Uri.parse('android.settings.SETTINGS');
+          if (await canLaunchUrl(systemSettingsUri)) {
+            await launchUrl(systemSettingsUri);
+          }
+        }
+      } else if (Platform.isIOS) {
+        // iOS: 打开应用设置
+        final settingsUri = Uri.parse('App-Prefs:');
+        if (await canLaunchUrl(settingsUri)) {
+          await launchUrl(settingsUri);
+        }
+      }
+    } catch (e) {
+      print('打开设置失败: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('无法打开设置: $e'), backgroundColor: Colors.red),
+      );
     }
   }
 
@@ -496,12 +965,6 @@ class _CloudFilesTabState extends State<CloudFilesTab> {
         'onTap': _getAppInfo,
       },
       {
-        'title': '存储信息',
-        'subtitle': _storageStatus,
-        'icon': Icons.storage,
-        'onTap': _getStorageInfo,
-      },
-      {
         'title': '显示/隐藏状态栏',
         'subtitle': '控制状态栏的显示和隐藏',
         'icon': Icons.visibility,
@@ -512,19 +975,6 @@ class _CloudFilesTabState extends State<CloudFilesTab> {
         'subtitle': '状态: $_flashlightStatus',
         'icon': Icons.flashlight_on,
         'onTap': toggleFlashlight,
-      },
-      {
-        'title': '麦克风',
-        'subtitle': '状态: $_microphoneStatus',
-        'icon': Icons.mic,
-        'onTap': () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('麦克风功能暂时不可用'),
-              backgroundColor: Colors.orange,
-            ),
-          );
-        },
       },
       {
         'title': '震动',
@@ -558,7 +1008,7 @@ class _CloudFilesTabState extends State<CloudFilesTab> {
       },
       {
         'title': '发送邮件',
-        'subtitle': '发送测试邮件',
+        'subtitle': '调用系统邮件应用',
         'icon': Icons.email,
         'onTap': _sendEmail,
       },
@@ -581,10 +1031,10 @@ class _CloudFilesTabState extends State<CloudFilesTab> {
         'onTap': showDialogs,
       },
       {
-        'title': '调用原生控件',
-        'subtitle': '调用iOS/Android原生功能',
-        'icon': Icons.phone_android,
-        'onTap': callNativeFeatures,
+        'title': '系统信息',
+        'subtitle': '显示系统版本和设备信息',
+        'icon': Icons.info,
+        'onTap': showSystemInfo,
       },
       {
         'title': '系统分享',
