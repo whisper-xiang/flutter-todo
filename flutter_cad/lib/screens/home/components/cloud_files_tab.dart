@@ -1055,15 +1055,6 @@ class _CloudFilesTabState extends State<CloudFilesTab> {
         'onTap': toggleStatusBar,
       },
       {
-        'title': '强制权限请求',
-        'subtitle': '请求所有相关权限并显示状态',
-        'icon': Icons.security,
-        'onTap': () {
-          final permissionRequest = PermissionForceRequest();
-          permissionRequest.forceRequestAllPermissions(context);
-        },
-      },
-      {
         'title': '相册访问',
         'subtitle': '访问系统相册和图片',
         'icon': Icons.photo_library,
@@ -1879,13 +1870,6 @@ class _CloudFilesTabState extends State<CloudFilesTab> {
                 content: Text('以下权限被拒绝: $deniedPermissions'),
                 backgroundColor: Colors.red,
                 duration: const Duration(seconds: 8),
-                action: SnackBarAction(
-                  label: '强制请求',
-                  onPressed: () {
-                    final permissionRequest = PermissionForceRequest();
-                    permissionRequest.forceRequestAllPermissions(context);
-                  },
-                ),
               ),
             );
             return;
@@ -2143,160 +2127,6 @@ class _CloudFilesTabState extends State<CloudFilesTab> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('删除失败: $e'), backgroundColor: Colors.red),
       );
-    }
-  }
-}
-
-// 强制权限请求工具类
-class PermissionForceRequest {
-  /// 强制请求所有可能需要的权限
-  Future<void> forceRequestAllPermissions(BuildContext context) async {
-    try {
-      List<Permission> permissionsToRequest = [];
-      int? sdkVersion;
-
-      if (Platform.isAndroid) {
-        // 检查Android版本
-        final deviceInfo = DeviceInfoPlugin();
-        final androidInfo = await deviceInfo.androidInfo;
-        sdkVersion = androidInfo.version.sdkInt;
-
-        if (sdkVersion >= 33) {
-          // Android 13+
-          permissionsToRequest.addAll([
-            Permission.photos,
-            Permission.videos,
-            Permission.storage, // 作为备选
-          ]);
-        } else {
-          // Android 12及以下
-          permissionsToRequest.addAll([Permission.storage]);
-        }
-
-        // 添加相机权限
-        permissionsToRequest.add(Permission.camera);
-      } else if (Platform.isIOS) {
-        // iOS权限
-        permissionsToRequest.addAll([Permission.photos, Permission.camera]);
-      }
-
-      // 批量请求权限
-      final Map<Permission, PermissionStatus> statuses =
-          await permissionsToRequest.request();
-
-      // 显示结果
-      showPermissionResults(context, statuses, sdkVersion);
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('权限请求失败: $e'), backgroundColor: Colors.red),
-      );
-    }
-  }
-
-  void showPermissionResults(
-    BuildContext context,
-    Map<Permission, PermissionStatus> statuses,
-    int? androidSdkVersion,
-  ) {
-    final grantedPermissions = <String>[];
-    final deniedPermissions = <String>[];
-    final permanentlyDeniedPermissions = <String>[];
-
-    statuses.forEach((permission, status) {
-      final permissionName = getPermissionDisplayName(permission);
-
-      if (status.isGranted) {
-        grantedPermissions.add(permissionName);
-      } else if (status.isPermanentlyDenied) {
-        permanentlyDeniedPermissions.add(permissionName);
-      } else {
-        deniedPermissions.add(permissionName);
-      }
-    });
-
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('权限请求结果 (Android ${androidSdkVersion ?? '未知'})'),
-          content: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (grantedPermissions.isNotEmpty) ...[
-                  const Text(
-                    '✅ 已授权权限:',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.green,
-                    ),
-                  ),
-                  ...grantedPermissions.map((p) => Text('• $p')),
-                  const SizedBox(height: 16),
-                ],
-                if (deniedPermissions.isNotEmpty) ...[
-                  const Text(
-                    '❌ 被拒绝权限:',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.red,
-                    ),
-                  ),
-                  ...deniedPermissions.map((p) => Text('• $p')),
-                  const SizedBox(height: 16),
-                ],
-                if (permanentlyDeniedPermissions.isNotEmpty) ...[
-                  const Text(
-                    '🚫 永久拒绝权限:',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.orange,
-                    ),
-                  ),
-                  ...permanentlyDeniedPermissions.map((p) => Text('• $p')),
-                  const SizedBox(height: 16),
-                  const Text(
-                    '永久拒绝的权限需要在系统设置中手动开启',
-                    style: TextStyle(color: Colors.orange, fontSize: 12),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('关闭'),
-            ),
-            if (permanentlyDeniedPermissions.isNotEmpty)
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  openAppSettings();
-                },
-                child: const Text('去设置'),
-              ),
-          ],
-        );
-      },
-    );
-  }
-
-  String getPermissionDisplayName(Permission permission) {
-    switch (permission) {
-      case Permission.storage:
-        return '存储权限';
-      case Permission.photos:
-        return '照片权限';
-      case Permission.videos:
-        return '视频权限';
-      case Permission.camera:
-        return '相机权限';
-      case Permission.microphone:
-        return '麦克风权限';
-      default:
-        return permission.toString().split('.').last;
     }
   }
 }
