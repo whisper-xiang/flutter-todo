@@ -49,12 +49,12 @@ dependencies:
   camera: ^0.11.3
   geolocator: ^10.1.1
   image_picker: ^1.0.7
-  contacts_service: ^0.6.3
+  # contacts_service: ^0.6.3  # 临时注释掉以解决构建问题
   package_info_plus: ^8.0.2
   share_plus: ^7.2.2
   sensors_plus: ^4.0.2
   torch_light: ^1.1.0
-  vibration: ^1.8.4
+  vibration: ^2.0.0
   hoops_visualize:
     path: ./hoops_visualize
   syncfusion_flutter_pdfviewer: ^28.1.37
@@ -84,8 +84,6 @@ dev_dependencies:
 # The following section is specific to Flutter packages.
 flutter:
   assets:
-    - assets/dwg/
-    - assets/web/
     - assets/test_files/
     - assets/test_files/Motherboard/
     - assets/config/
