@@ -7,17 +7,17 @@ import 'package:path_provider/path_provider.dart';
 import '../models/cad_file.dart';
 import '../utils/local_asset_server.dart';
 
-class OcfPreviewScreen extends StatefulWidget {
+class Ocf4PreviewScreen extends StatefulWidget {
   final String id;
   final CadFile file;
 
-  const OcfPreviewScreen({super.key, required this.id, required this.file});
+  const Ocf4PreviewScreen({super.key, required this.id, required this.file});
 
   @override
-  State<OcfPreviewScreen> createState() => _OcfPreviewScreenState();
+  State<Ocf4PreviewScreen> createState() => _Ocf4PreviewScreenState();
 }
 
-class _OcfPreviewScreenState extends State<OcfPreviewScreen> {
+class _Ocf4PreviewScreenState extends State<Ocf4PreviewScreen> {
   late final WebViewController _controller;
   bool _isLoading = true;
 
@@ -81,21 +81,18 @@ class _OcfPreviewScreenState extends State<OcfPreviewScreen> {
       // 1. 将 OCF 文件托管到本地服务器
       String? ocfUrl;
       try {
-        // 假设 widget.file.path 是本地文件路径
-        // 如果是 FileProvider 中的虚拟文件，可能需要先下载或获取真实路径
-        // 这里假设它有本地路径
         if (widget.file.path != null) {
            ocfUrl = await server.serveFile(widget.file.path!);
-           debugPrint('OCF文件已托管: $ocfUrl');
+           debugPrint('OCF4文件已托管: $ocfUrl');
         } else {
-           debugPrint('错误: OCF文件没有本地路径');
+           debugPrint('错误: OCF4文件没有本地路径');
         }
       } catch (e) {
-        debugPrint('托管OCF文件失败: $e');
+        debugPrint('托管OCF4文件失败: $e');
       }
 
-      // 2. 构建带参数的 URL
-      String url = '$serverUrl/index.html';
+      // 2. 构建带参数的 URL，这里使用 3d
+      String url = '$serverUrl/3d/index.html';
       if (ocfUrl != null) {
         url += '?file=${Uri.encodeComponent(ocfUrl)}';
       }

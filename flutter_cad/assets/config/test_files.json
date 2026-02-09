@@ -1,6 +1,11 @@
 {
   "test_files": [
     {
+      "path": "assets/test_files/ocf4格式.ocf4",
+      "category": "ocf4",
+      "description": "ocf4测试文件"
+    },
+    {
       "path": "assets/test_files/ocf格式.ocf",
       "category": "ocf",
       "description": "ocf测试文件"

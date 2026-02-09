@@ -74,6 +74,7 @@ lib/
 - `path_provider`: 文件系统访问
 - `shared_preferences`: 简单数据持久化
 
+flutter run -d A4RYVB3704004670
 
 xcrun simctl list devices available
 

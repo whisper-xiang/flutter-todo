@@ -6,6 +6,7 @@
  */
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart' as picker;
 import 'package:go_router/go_router.dart';
 import 'package:path_provider/path_provider.dart';
 import '../../../models/cad_file.dart';
@@ -140,6 +141,7 @@ class _LocalFilesTabState extends State<LocalFilesTab>
       fileType = FileType.cad2d;
     } else if ([
       'ocf',
+      'ocf4',
       'sldprt',
       'step',
       'stp',
@@ -220,6 +222,9 @@ class _LocalFilesTabState extends State<LocalFilesTab>
       } else if (extension == 'ocf') {
         // OCF文件使用专门的预览页面
         context.push('/ocf-preview/$fileId', extra: cadFile);
+      } else if (extension == 'ocf4') {
+        // OCF4文件使用专门的预览页面
+        context.push('/ocf4-preview/$fileId', extra: cadFile);
       } else if (fileType == FileType.cad2d || fileType == FileType.cad3d) {
         // 其他CAD文件使用HOOPS预览
         context.push('/hoops-preview/$fileId', extra: cadFile);
@@ -271,6 +276,27 @@ class _LocalFilesTabState extends State<LocalFilesTab>
     );
   }
 
+  Future<void> _refreshFiles() async {
+    await _loadRecentFiles();
+  }
+
+  Future<void> _pickFile() async {
+    try {
+      picker.FilePickerResult? result = await picker.FilePicker.platform.pickFiles();
+
+      if (result != null && result.files.single.path != null) {
+        File file = File(result.files.single.path!);
+        await _openFileWithNative(file);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('选择文件失败: $e')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -284,6 +310,11 @@ class _LocalFilesTabState extends State<LocalFilesTab>
           onPressed: () => widget.scaffoldKey.currentState?.openDrawer(),
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.folder_open),
+            onPressed: _pickFile,
+            tooltip: '打开文件',
+          ),
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert),
             onSelected: (value) {
@@ -399,6 +430,7 @@ class _LocalFilesTabState extends State<LocalFilesTab>
       case '.dxf':
         return Icons.design_services;
       case '.ocf':
+      case '.ocf4':
         return Icons.view_in_ar;
       case '.pdf':
         return Icons.picture_as_pdf;
@@ -461,6 +493,7 @@ class _LocalFilesTabState extends State<LocalFilesTab>
       case '.dxf':
         return Colors.orange;
       case '.ocf':
+      case '.ocf4':
         return Colors.purple;
       case '.pdf':
         return Colors.red;
@@ -644,7 +677,7 @@ class _LocalFilesTabState extends State<LocalFilesTab>
   // 检查是否为支持的文件类型
   bool _isSupportedFileType(String extension) {
     return [
-      'dwg', 'dxf', 'ocf', 'obj', 'hsf', // CAD文件
+      'dwg', 'dxf', 'ocf', 'ocf4', 'obj', 'hsf', // CAD文件
       'pdf', // PDF文件
       'jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', // 图片文件
       'mp4', 'avi', 'mov', 'wmv', 'flv', 'mkv', 'webm', // 视频文件

@@ -37,36 +37,41 @@ class LocalAssetServer {
       final webAssetKeys = manifestMap.keys.where((key) => key.startsWith('assets/web/'));
 
       for (final key in webAssetKeys) {
-        final byteData = await rootBundle.load(key);
-        // 创建一个与资源路径匹配的文件路径
-        final filePath = p.join(_tempDir!.path, key);
-        final file = File(filePath);
-        if (!await file.parent.exists()) {
-            await file.parent.create(recursive: true);
-        }
-        await file.writeAsBytes(byteData.buffer.asUint8List());
+        await _extractFile(key);
       }
     } catch (e) {
        print('Error loading AssetManifest.json or extracting assets: $e');
-       // 如果 AssetManifest.json 加载失败，我们可以尝试直接加载 index.html
-       // 这在调试模式下通常是可行的，至少保证核心功能可用
-       try {
-          final indexContent = await rootBundle.loadString('assets/web/index.html');
-          final indexPath = p.join(_tempDir!.path, 'assets/web/index.html');
-          final indexFile = File(indexPath);
-          if (!await indexFile.parent.exists()) {
-             await indexFile.parent.create(recursive: true);
-          }
-          await indexFile.writeAsString(indexContent);
-       } catch (e2) {
-          print('Fallback loading of index.html failed: $e2');
-       }
     }
+    
+    // 无论 Manifest 是否加载成功，都显式尝试加载关键文件
+    // 这可以解决开发过程中 Manifest 未及时更新导致新文件 404 的问题
+    await _extractFile('assets/web/index.html');
+    await _extractFile('assets/web/3d/index.html');
+    await _extractFile('assets/web/3d/1303-5504001-01.ocf4');
+    await _extractFile('assets/web/3d/hoops-web-viewer-monolith.umd.js');
+    await _extractFile('assets/web/3d/main.js');
 
     var handler = createStaticHandler(_tempDir!.path, defaultDocument: 'index.html');
     _server = await io.serve(handler, 'localhost', 0);
     _port = _server!.port;
     print('Local asset server started on http://localhost:$_port');
+  }
+  
+  Future<void> _extractFile(String key) async {
+    try {
+      // 尝试加载资源
+      final byteData = await rootBundle.load(key);
+      final filePath = p.join(_tempDir!.path, key);
+      final file = File(filePath);
+      if (!await file.parent.exists()) {
+          await file.parent.create(recursive: true);
+      }
+      await file.writeAsBytes(byteData.buffer.asUint8List());
+      print('Successfully extracted: $key');
+    } catch (e) {
+      // 忽略文件不存在的错误，避免日志刷屏，但在调试时可能有用
+      print('Failed to extract $key: $e');
+    }
   }
 
   void stop() {

@@ -27,6 +27,7 @@ import 'screens/word_preview_screen.dart';
 import 'screens/excel_preview_screen.dart';
 import 'screens/ppt_preview_screen.dart';
 import 'screens/ocf_preview_screen.dart';
+import 'screens/ocf4_preview_screen.dart';
 
 final router = GoRouter(
   initialLocation: '/home',
@@ -120,6 +121,16 @@ final router = GoRouter(
         final file = state.extra as CadFile;
         return CupertinoPage(
           child: OcfPreviewScreen(id: id, file: file),
+        );
+      },
+    ),
+    GoRoute(
+      path: '/ocf4-preview/:id',
+      pageBuilder: (context, state) {
+        final id = state.pathParameters['id']!;
+        final file = state.extra as CadFile;
+        return CupertinoPage(
+          child: Ocf4PreviewScreen(id: id, file: file),
         );
       },
     ),
