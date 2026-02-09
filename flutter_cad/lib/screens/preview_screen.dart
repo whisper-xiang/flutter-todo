@@ -23,7 +23,6 @@ class _PreviewScreenState extends State<PreviewScreen> {
     super.initState();
     _initializePreview();
   }
-
   Future<void> _initializePreview() async {
     // 所有格式走WebView渲染
     await _initializeWebView();

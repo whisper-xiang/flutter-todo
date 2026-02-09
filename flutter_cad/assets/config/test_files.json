@@ -1,6 +1,11 @@
 {
   "test_files": [
     {
+      "path": "assets/test_files/ocf格式.ocf",
+      "category": "ocf",
+      "description": "ocf测试文件"
+    },
+    {
       "path": "assets/test_files/sample2.pdf",
       "category": "PDF文件",
       "description": "PDF测试文件"

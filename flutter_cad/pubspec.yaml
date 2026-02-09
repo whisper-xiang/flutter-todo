@@ -68,6 +68,8 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  shelf: ^1.4.1
+  shelf_static: ^1.1.2
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
@@ -85,6 +87,7 @@ flutter:
     - assets/test_files/
     - assets/test_files/Motherboard/
     - assets/config/
+    - assets/web/
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in

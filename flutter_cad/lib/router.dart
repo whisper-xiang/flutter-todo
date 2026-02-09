@@ -26,6 +26,7 @@ import 'screens/audio_preview_screen.dart';
 import 'screens/word_preview_screen.dart';
 import 'screens/excel_preview_screen.dart';
 import 'screens/ppt_preview_screen.dart';
+import 'screens/ocf_preview_screen.dart';
 
 final router = GoRouter(
   initialLocation: '/home',
@@ -109,8 +110,16 @@ final router = GoRouter(
       path: '/dwg-preview/:id',
       pageBuilder: (context, state) {
         final file = state.extra as CadFile;
+        return CupertinoPage(child: DwgPreviewScreen(cadFile: file));
+      },
+    ),
+    GoRoute(
+      path: '/ocf-preview/:id',
+      pageBuilder: (context, state) {
+        final id = state.pathParameters['id']!;
+        final file = state.extra as CadFile;
         return CupertinoPage(
-          child: DwgPreviewScreen(cadFile: file),
+          child: OcfPreviewScreen(id: id, file: file),
         );
       },
     ),
@@ -118,63 +127,49 @@ final router = GoRouter(
       path: '/enhanced-preview/:id',
       pageBuilder: (context, state) {
         final file = state.extra as CadFile;
-        return CupertinoPage(
-          child: EnhancedPreviewScreen(file: file),
-        );
+        return CupertinoPage(child: EnhancedPreviewScreen(file: file));
       },
     ),
     GoRoute(
       path: '/pdf-preview/:id',
       pageBuilder: (context, state) {
         final file = state.extra as CadFile;
-        return CupertinoPage(
-          child: PdfPreviewScreen(file: file),
-        );
+        return CupertinoPage(child: PdfPreviewScreen(file: file));
       },
     ),
     GoRoute(
       path: '/video-preview/:id',
       pageBuilder: (context, state) {
         final file = state.extra as CadFile;
-        return CupertinoPage(
-          child: SimpleVideoScreen(file: file),
-        );
+        return CupertinoPage(child: SimpleVideoScreen(file: file));
       },
     ),
     GoRoute(
       path: '/audio-preview/:id',
       pageBuilder: (context, state) {
         final file = state.extra as CadFile;
-        return CupertinoPage(
-          child: AudioPreviewScreen(file: file),
-        );
+        return CupertinoPage(child: AudioPreviewScreen(file: file));
       },
     ),
     GoRoute(
       path: '/word-preview/:id',
       pageBuilder: (context, state) {
         final file = state.extra as CadFile;
-        return CupertinoPage(
-          child: WordPreviewScreen(file: file),
-        );
+        return CupertinoPage(child: WordPreviewScreen(file: file));
       },
     ),
     GoRoute(
       path: '/excel-preview/:id',
       pageBuilder: (context, state) {
         final file = state.extra as CadFile;
-        return CupertinoPage(
-          child: ExcelPreviewScreen(file: file),
-        );
+        return CupertinoPage(child: ExcelPreviewScreen(file: file));
       },
     ),
     GoRoute(
       path: '/ppt-preview/:id',
       pageBuilder: (context, state) {
         final file = state.extra as CadFile;
-        return CupertinoPage(
-          child: PptPreviewScreen(file: file),
-        );
+        return CupertinoPage(child: PptPreviewScreen(file: file));
       },
     ),
   ],

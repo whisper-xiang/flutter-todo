@@ -217,6 +217,9 @@ class _LocalFilesTabState extends State<LocalFilesTab>
       if (fileType == FileType.cad2d && extension == 'dwg') {
         // DWG文件使用WebView预览
         context.push('/dwg-preview/$fileId', extra: cadFile);
+      } else if (extension == 'ocf') {
+        // OCF文件使用专门的预览页面
+        context.push('/ocf-preview/$fileId', extra: cadFile);
       } else if (fileType == FileType.cad2d || fileType == FileType.cad3d) {
         // 其他CAD文件使用HOOPS预览
         context.push('/hoops-preview/$fileId', extra: cadFile);
@@ -390,7 +393,7 @@ class _LocalFilesTabState extends State<LocalFilesTab>
   }
 
   IconData _getFileIcon(String fileName) {
-    final extension = fileName.split('.').last.toLowerCase();
+    final extension = '.${fileName.split('.').last.toLowerCase()}';
     switch (extension) {
       case '.dwg':
       case '.dxf':
@@ -452,7 +455,7 @@ class _LocalFilesTabState extends State<LocalFilesTab>
   }
 
   Color _getFileIconColor(String fileName) {
-    final extension = fileName.split('.').last.toLowerCase();
+    final extension = '.${fileName.split('.').last.toLowerCase()}';
     switch (extension) {
       case '.dwg':
       case '.dxf':

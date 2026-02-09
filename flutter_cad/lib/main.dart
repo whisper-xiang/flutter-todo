@@ -12,8 +12,12 @@ import 'services/mock_service.dart';
 import 'router.dart';
 import 'config/environment_config.dart';
 import 'config/app_flavor.dart';
+import 'utils/local_asset_server.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await LocalAssetServer().start();
+
   const String environment = String.fromEnvironment(
     'FLUTTER_FLAVOR',
     defaultValue: EnvironmentConfig.dev,
