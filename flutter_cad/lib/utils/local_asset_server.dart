@@ -78,4 +78,34 @@ class LocalAssetServer {
   }
 
   String? get a_s_s_e_t_s_url => _port != null ? 'http://localhost:$_port/assets/web' : null;
+
+  /// 将本地文件复制到服务器目录并返回可访问的 URL
+  Future<String?> serveFile(String filePath) async {
+    if (_port == null || _tempDir == null) return null;
+
+    try {
+      final file = File(filePath);
+      if (!await file.exists()) return null;
+
+      // 生成唯一文件名以避免冲突
+      final fileName = p.basename(filePath);
+      // 使用 hash 避免缓存问题
+      final uniqueName = '${DateTime.now().millisecondsSinceEpoch}_$fileName';
+      
+      // 复制到 assets/web/files 目录
+      final targetPath = p.join(_tempDir!.path, 'assets', 'web', 'files', uniqueName);
+      final targetFile = File(targetPath);
+      
+      if (!await targetFile.parent.exists()) {
+        await targetFile.parent.create(recursive: true);
+      }
+      
+      await file.copy(targetPath);
+      
+      return 'http://localhost:$_port/assets/web/files/$uniqueName';
+    } catch (e) {
+      print('Error serving file: $e');
+      return null;
+    }
+  }
 }

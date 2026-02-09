@@ -74,9 +74,34 @@ class _OcfPreviewScreenState extends State<OcfPreviewScreen> {
   }
 
   Future<void> _loadLocalHtml() async {
-    final serverUrl = LocalAssetServer().a_s_s_e_t_s_url;
+    final server = LocalAssetServer();
+    final serverUrl = server.a_s_s_e_t_s_url;
+    
     if (serverUrl != null) {
-      await _controller.loadRequest(Uri.parse('$serverUrl/index.html'));
+      // 1. 将 OCF 文件托管到本地服务器
+      String? ocfUrl;
+      try {
+        // 假设 widget.file.path 是本地文件路径
+        // 如果是 FileProvider 中的虚拟文件，可能需要先下载或获取真实路径
+        // 这里假设它有本地路径
+        if (widget.file.path != null) {
+           ocfUrl = await server.serveFile(widget.file.path!);
+           debugPrint('OCF文件已托管: $ocfUrl');
+        } else {
+           debugPrint('错误: OCF文件没有本地路径');
+        }
+      } catch (e) {
+        debugPrint('托管OCF文件失败: $e');
+      }
+
+      // 2. 构建带参数的 URL
+      String url = '$serverUrl/index.html';
+      if (ocfUrl != null) {
+        url += '?file=${Uri.encodeComponent(ocfUrl)}';
+      }
+      
+      debugPrint('加载 WebView URL: $url');
+      await _controller.loadRequest(Uri.parse(url));
     } else {
       // Handle server not started error
       debugPrint('Error: Local asset server is not running.');
