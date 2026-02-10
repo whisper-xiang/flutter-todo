@@ -34,15 +34,17 @@ class LocalAssetServer {
     try {
       final manifestContent = await rootBundle.loadString('AssetManifest.json');
       final Map<String, dynamic> manifestMap = json.decode(manifestContent);
-      final webAssetKeys = manifestMap.keys.where((key) => key.startsWith('assets/web/'));
+      final webAssetKeys = manifestMap.keys.where(
+        (key) => key.startsWith('assets/web/'),
+      );
 
       for (final key in webAssetKeys) {
         await _extractFile(key);
       }
     } catch (e) {
-       print('Error loading AssetManifest.json or extracting assets: $e');
+      print('Error loading AssetManifest.json or extracting assets: $e');
     }
-    
+
     // 无论 Manifest 是否加载成功，都显式尝试加载关键文件
     // 这可以解决开发过程中 Manifest 未及时更新导致新文件 404 的问题
     await _extractFile('assets/web/index.html');
@@ -51,12 +53,15 @@ class LocalAssetServer {
     await _extractFile('assets/web/3d/hoops-web-viewer-monolith.umd.js');
     await _extractFile('assets/web/3d/main.js');
 
-    var handler = createStaticHandler(_tempDir!.path, defaultDocument: 'index.html');
+    var handler = createStaticHandler(
+      _tempDir!.path,
+      defaultDocument: 'index.html',
+    );
     _server = await io.serve(handler, 'localhost', 0);
     _port = _server!.port;
     print('Local asset server started on http://localhost:$_port');
   }
-  
+
   Future<void> _extractFile(String key) async {
     try {
       // 尝试加载资源
@@ -64,7 +69,7 @@ class LocalAssetServer {
       final filePath = p.join(_tempDir!.path, key);
       final file = File(filePath);
       if (!await file.parent.exists()) {
-          await file.parent.create(recursive: true);
+        await file.parent.create(recursive: true);
       }
       await file.writeAsBytes(byteData.buffer.asUint8List());
       print('Successfully extracted: $key');
@@ -82,31 +87,39 @@ class LocalAssetServer {
     print('Local asset server stopped');
   }
 
-  String? get a_s_s_e_t_s_url => _port != null ? 'http://localhost:$_port/assets/web' : null;
+  String? get a_s_s_e_t_s_url =>
+      _port != null ? 'http://localhost:$_port/assets/web' : null;
 
   /// 将本地文件复制到服务器目录并返回可访问的 URL
-  Future<String?> serveFile(String filePath) async {
+  Future<String?> serveFile(String filePath, {String? fileName}) async {
     if (_port == null || _tempDir == null) return null;
 
     try {
       final file = File(filePath);
       if (!await file.exists()) return null;
 
-      // 生成唯一文件名以避免冲突
-      final fileName = p.basename(filePath);
-      // 使用 hash 避免缓存问题
-      final uniqueName = '${DateTime.now().millisecondsSinceEpoch}_$fileName';
-      
+      // 如果未提供文件名，则使用源文件名
+      final effectiveFileName = fileName ?? p.basename(filePath);
+      // 使用 hash 避免缓存问题，保留原始文件名（含扩展名）
+      final uniqueName =
+          '${DateTime.now().millisecondsSinceEpoch}_$effectiveFileName';
+
       // 复制到 assets/web/files 目录
-      final targetPath = p.join(_tempDir!.path, 'assets', 'web', 'files', uniqueName);
+      final targetPath = p.join(
+        _tempDir!.path,
+        'assets',
+        'web',
+        'files',
+        uniqueName,
+      );
       final targetFile = File(targetPath);
-      
+
       if (!await targetFile.parent.exists()) {
         await targetFile.parent.create(recursive: true);
       }
-      
+
       await file.copy(targetPath);
-      
+
       return 'http://localhost:$_port/assets/web/files/$uniqueName';
     } catch (e) {
       print('Error serving file: $e');

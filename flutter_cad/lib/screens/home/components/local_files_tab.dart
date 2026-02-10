@@ -1,8 +1,8 @@
 /*
  * @Author: 轻语 243267674@qq.com
  * @Date: 2025-12-24 15:37:54
- * @LastEditors: 轻语 243267674@qq.com
- * @LastEditTime: 2026-01-21 17:27:01
+ * @LastEditors: whisper_xiang
+ * @LastEditTime: 2026-02-10 10:35:29
  */
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -82,7 +82,7 @@ class _LocalFilesTabState extends State<LocalFilesTab>
 
       // 按文件类型重要性排序
       final List<String> typeOrder = [
-        'dwg', 'dxf', 'ocf', 'obj', 'hsf', // CAD文件
+        'dwg', 'dxf', 'ocf', 'ocf4', 'obj', 'hsf', // CAD文件
         'pdf', // PDF文件
         'jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', // 图片文件
         'mp4', 'avi', 'mov', 'wmv', 'flv', 'mkv', 'webm', // 视频文件
@@ -129,19 +129,38 @@ class _LocalFilesTabState extends State<LocalFilesTab>
     }
   }
 
-  Future<void> _openFileWithNative(File file) async {
+  Future<void> _openFileWithNative(File file, {String? explicitName}) async {
+    debugPrint('🔍 [DEBUG] _openFileWithNative 开始执行');
+    debugPrint('🔍 [DEBUG] 文件路径: ${file.path}');
+    debugPrint('🔍 [DEBUG] 显式文件名: $explicitName');
+
     final fileSize = await file.length();
+    // 如果提供了显式文件名（通常来自FilePicker），则优先使用
     final fileName = file.path.split('/').last;
     final fileId = 'local-native-${file.path.hashCode}';
-    final extension = fileName.split('.').last.toLowerCase();
+    String extension = fileName.split('.').last.toLowerCase().trim();
+
+    debugPrint('🔍 [DEBUG] 原始文件名: $fileName');
+    debugPrint('🔍 [DEBUG] 文件扩展名: $extension');
+    debugPrint('🔍 [DEBUG] 文件大小: $fileSize bytes');
+
+    // 强制修正 ocf4 扩展名，防止解析错误
+    if (fileName.toLowerCase().endsWith('.ocf4')) {
+      extension = 'ocf4';
+      debugPrint('🔍 [DEBUG] 修正扩展名为: $extension');
+    }
+
+    print('【LocalFilesTab】打开文件: $fileName, 扩展名: $extension, 路径: ${file.path}');
 
     // 根据文件扩展名确定文件类型
     FileType fileType;
     if (['dwg', 'dxf'].contains(extension)) {
       fileType = FileType.cad2d;
+      debugPrint('🔍 [DEBUG] 文件类型识别为: cad2d');
+    } else if (['ocf', 'ocf4'].contains(extension)) {
+      fileType = FileType.ocf;
+      debugPrint('🔍 [DEBUG] 文件类型识别为: ocf ✅');
     } else if ([
-      'ocf',
-      'ocf4',
       'sldprt',
       'step',
       'stp',
@@ -215,16 +234,26 @@ class _LocalFilesTabState extends State<LocalFilesTab>
     );
 
     if (mounted) {
+      debugPrint('🔍 [DEBUG] 开始路由判断');
+      debugPrint('🔍 [DEBUG] 文件名: $fileName');
+      debugPrint('🔍 [DEBUG] 扩展名: $extension');
+      debugPrint('🔍 [DEBUG] 文件类型: $fileType');
+      debugPrint('🔍 [DEBUG] 判定为OCF4: ${extension == 'ocf4'}');
+      debugPrint('🔍 [DEBUG] 判定为OCF: ${extension == 'ocf'}');
+
       // 根据文件类型进行不同的处理
       if (fileType == FileType.cad2d && extension == 'dwg') {
         // DWG文件使用WebView预览
+        debugPrint('🔍 [DEBUG] 跳转 DWG 预览: /dwg-preview/$fileId');
         context.push('/dwg-preview/$fileId', extra: cadFile);
+      } else if (extension == 'ocf4') {
+        // 优先判断 ocf4
+        debugPrint('🔍 [DEBUG] 跳转 OCF4 预览: /ocf4-preview/$fileId');
+        context.push('/ocf4-preview/$fileId', extra: cadFile);
       } else if (extension == 'ocf') {
         // OCF文件使用专门的预览页面
+        debugPrint('🔍 [DEBUG] 跳转 OCF 预览: /ocf-preview/$fileId');
         context.push('/ocf-preview/$fileId', extra: cadFile);
-      } else if (extension == 'ocf4') {
-        // OCF4文件使用专门的预览页面
-        context.push('/ocf4-preview/$fileId', extra: cadFile);
       } else if (fileType == FileType.cad2d || fileType == FileType.cad3d) {
         // 其他CAD文件使用HOOPS预览
         context.push('/hoops-preview/$fileId', extra: cadFile);
@@ -282,16 +311,71 @@ class _LocalFilesTabState extends State<LocalFilesTab>
 
   Future<void> _pickFile() async {
     try {
-      picker.FilePickerResult? result = await picker.FilePicker.platform.pickFiles();
+      debugPrint('🔍 [DEBUG] _pickFile 开始执行');
+      debugPrint('【LocalFilesTab】准备调用 FilePicker...');
 
-      if (result != null && result.files.single.path != null) {
-        File file = File(result.files.single.path!);
-        await _openFileWithNative(file);
+      picker.FilePickerResult? result = await picker.FilePicker.platform
+          .pickFiles(type: picker.FileType.any);
+
+      debugPrint('🔍 [DEBUG] FilePicker 返回: ${result?.count} 个文件');
+      debugPrint('【LocalFilesTab】FilePicker 返回: ${result?.count} 个文件');
+
+      if (result == null) {
+        debugPrint('🔍 [DEBUG] 用户取消了文件选择');
+        debugPrint('【LocalFilesTab】用户取消了选择');
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('未选择文件')));
+        }
+        return;
       }
-    } catch (e) {
+
+      debugPrint('🔍 [DEBUG] 开始处理选择的文件');
+      final platformFile = result.files.single;
+      debugPrint(
+        '🔍 [DEBUG] 选中文件: name=${platformFile.name}, path=${platformFile.path}',
+      );
+
+      if (platformFile.path != null) {
+        debugPrint('🔍 [DEBUG] 文件路径不为空，调用 _openFileWithNative');
+        File file = File(platformFile.path!);
+        // 传递原始文件名，确保在缓存路径下也能正确识别扩展名
+        await _openFileWithNative(file, explicitName: platformFile.name);
+        debugPrint('🔍 [DEBUG] _openFileWithNative 调用完成');
+      } else {
+        debugPrint('🔍 [DEBUG] 文件路径为空，尝试使用 bytes 或 identifier');
+        if (mounted) {
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('路径获取失败'),
+              content: Text('无法获取文件路径。\n文件名: ${platformFile.name}'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('确定'),
+                ),
+              ],
+            ),
+          );
+        }
+      }
+    } catch (e, stack) {
+      debugPrint('【LocalFilesTab】选择文件出错: $e\n$stack');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('选择文件失败: $e')),
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('选择文件出错'),
+            content: SingleChildScrollView(child: Text('Error: $e')),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('确定'),
+              ),
+            ],
+          ),
         );
       }
     }
@@ -310,11 +394,11 @@ class _LocalFilesTabState extends State<LocalFilesTab>
           onPressed: () => widget.scaffoldKey.currentState?.openDrawer(),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.folder_open),
-            onPressed: _pickFile,
-            tooltip: '打开文件',
-          ),
+          // IconButton(
+          //   icon: const Icon(Icons.folder_open),
+          //   onPressed: _pickFile,
+          //   tooltip: '打开文件',
+          // ),
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert),
             onSelected: (value) {

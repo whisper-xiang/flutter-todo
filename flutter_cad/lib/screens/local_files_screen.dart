@@ -67,7 +67,7 @@ class _LocalFilesScreenState extends State<LocalFilesScreen> {
       FileType fileType;
       if (['.dwg', '.dxf'].contains(extension)) {
         fileType = FileType.cad2d;
-      } else if (['.ocf'].contains(extension)) {
+      } else if (['.ocf', '.ocf4'].contains(extension)) {
         fileType = FileType.cad3d;
       } else if (['.pdf'].contains(extension)) {
         fileType = FileType.pdf;
@@ -100,8 +100,12 @@ class _LocalFilesScreenState extends State<LocalFilesScreen> {
 
       // 跳转到预览页面
       if (mounted) {
-        // CAD文件使用HOOPS预览，其他文件使用普通预览
-        if (fileType == FileType.cad2d || fileType == FileType.cad3d) {
+        // 根据扩展名判断具体跳转
+        if (extension == '.ocf4') {
+          context.push('/ocf4-preview/${cadFile.id}', extra: cadFile);
+        } else if (extension == '.ocf') {
+          context.push('/ocf-preview/${cadFile.id}', extra: cadFile);
+        } else if (fileType == FileType.cad2d || fileType == FileType.cad3d) {
           context.push('/hoops-preview/${cadFile.id}', extra: cadFile);
         } else {
           context.push('/preview/${cadFile.id}', extra: cadFile);

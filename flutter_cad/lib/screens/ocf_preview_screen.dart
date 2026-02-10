@@ -35,7 +35,7 @@ class _OcfPreviewScreenState extends State<OcfPreviewScreen> {
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageStarted: (String url) {
-             debugPrint('开始加载: $url');
+            debugPrint('开始加载: $url');
           },
           onPageFinished: (String url) {
             debugPrint('加载完成: $url');
@@ -46,7 +46,9 @@ class _OcfPreviewScreenState extends State<OcfPreviewScreen> {
             }
           },
           onWebResourceError: (WebResourceError error) {
-            debugPrint('Web资源错误: code=${error.errorCode}, description=${error.description}, type=${error.errorType}, url=${error.url}');
+            debugPrint(
+              'Web资源错误: code=${error.errorCode}, description=${error.description}, type=${error.errorType}, url=${error.url}',
+            );
             if (mounted) {
               setState(() {
                 _isLoading = false;
@@ -76,7 +78,7 @@ class _OcfPreviewScreenState extends State<OcfPreviewScreen> {
   Future<void> _loadLocalHtml() async {
     final server = LocalAssetServer();
     final serverUrl = server.a_s_s_e_t_s_url;
-    
+
     if (serverUrl != null) {
       // 1. 将 OCF 文件托管到本地服务器
       String? ocfUrl;
@@ -85,10 +87,13 @@ class _OcfPreviewScreenState extends State<OcfPreviewScreen> {
         // 如果是 FileProvider 中的虚拟文件，可能需要先下载或获取真实路径
         // 这里假设它有本地路径
         if (widget.file.path != null) {
-           ocfUrl = await server.serveFile(widget.file.path!);
-           debugPrint('OCF文件已托管: $ocfUrl');
+          ocfUrl = await server.serveFile(
+            widget.file.path!,
+            fileName: widget.file.name,
+          );
+          debugPrint('OCF文件已托管: $ocfUrl');
         } else {
-           debugPrint('错误: OCF文件没有本地路径');
+          debugPrint('错误: OCF文件没有本地路径');
         }
       } catch (e) {
         debugPrint('托管OCF文件失败: $e');
@@ -99,8 +104,9 @@ class _OcfPreviewScreenState extends State<OcfPreviewScreen> {
       if (ocfUrl != null) {
         url += '?file=${Uri.encodeComponent(ocfUrl)}';
       }
-      
-      debugPrint('加载 WebView URL: $url');
+
+      debugPrint('【OcfPreviewScreen】加载 URL: $url');
+
       await _controller.loadRequest(Uri.parse(url));
     } else {
       // Handle server not started error
@@ -115,7 +121,8 @@ class _OcfPreviewScreenState extends State<OcfPreviewScreen> {
       body: SafeArea(
         child: Stack(
           children: [
-            if (_isControllerInitialized) WebViewWidget(controller: _controller),
+            if (_isControllerInitialized)
+              WebViewWidget(controller: _controller),
             if (_isLoading) const Center(child: CircularProgressIndicator()),
           ],
         ),

@@ -3,18 +3,19 @@ enum FileType {
   pdf,
   cad2d,
   cad3d,
+  ocf,
   video,
   audio,
   text,
   document,
-  unknown
+  unknown,
 }
 
 class CadFile {
   final String id;
   final String name;
   final String? path; // Local path
-  final String? url;  // Remote URL
+  final String? url; // Remote URL
   final FileType type;
   final DateTime modifiedAt;
   final int size;
