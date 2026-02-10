@@ -11,6 +11,10 @@
     HoopsEngine_Shutdown();
 }
 
++ (void)fullShutdown {
+    HoopsEngine_FullShutdown();
+}
+
 + (BOOL)isInitialized {
     return HoopsEngine_IsInitialized();
 }

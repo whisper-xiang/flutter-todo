@@ -20,22 +20,33 @@ class _HoopsPreviewScreenState extends State<HoopsPreviewScreen> {
   bool _isLoading = true;
   bool _fileLoaded = false;
   String? _errorMessage;
+  bool _isDisposed = false;
 
   void _onViewCreated() {
-    debugPrint('HOOPS View created');
+    if (!_isDisposed) {
+      debugPrint('HOOPS View created');
+    }
   }
 
   void _onFileLoaded(bool success) {
-    setState(() {
-      _isLoading = false;
-      _fileLoaded = success;
-      if (!success) {
-        _errorMessage = 'CAD文件加载失败';
+    if (!_isDisposed && mounted) {
+      setState(() {
+        _isLoading = false;
+        _fileLoaded = success;
+        if (!success) {
+          _errorMessage = 'CAD文件加载失败';
+        }
+      });
+      if (success) {
+        debugPrint('CAD文件加载成功: ${widget.file.name}');
       }
-    });
-    if (success) {
-      debugPrint('CAD文件加载成功: ${widget.file.name}');
     }
+  }
+
+  @override
+  void dispose() {
+    _isDisposed = true;
+    super.dispose();
   }
 
   @override

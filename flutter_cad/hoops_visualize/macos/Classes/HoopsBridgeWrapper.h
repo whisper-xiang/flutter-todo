@@ -7,6 +7,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 + (BOOL)initializeWithLicense:(NSString *)license;
 + (void)shutdown;
++ (void)fullShutdown;
 + (BOOL)isInitialized;
 
 + (int)loadFile:(NSString *)filePath;

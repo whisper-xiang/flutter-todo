@@ -284,11 +284,34 @@ static void RenderHOOPSInfo(void) {
 #pragma mark - Public API
 
 bool HoopsEngine_Initialize(const char* license) {
+    NSLog(@"HoopsEngine_Initialize called, g_isInitialized=%s, g_hpsWorld=%p", 
+          g_isInitialized ? "true" : "false", g_hpsWorld);
+    
     if (g_isInitialized) {
+        // 如果已经初始化，确保关键资源存在
+        if (!g_loadedModels) {
+            g_loadedModels = [[NSMutableDictionary alloc] init];
+            NSLog(@"Recreated g_loadedModels");
+        }
+        if (!g_metalDevice) {
+            g_metalDevice = MTLCreateSystemDefaultDevice();
+            NSLog(@"Recreated g_metalDevice");
+        }
+        if (!g_commandQueue && g_metalDevice) {
+            g_commandQueue = [g_metalDevice newCommandQueue];
+            NSLog(@"Recreated g_commandQueue");
+        }
+        if (!g_pixelBuffer) {
+            CreatePixelBuffer();
+            NSLog(@"Recreated g_pixelBuffer");
+        }
+        NSLog(@"Returning true from already initialized state");
         return true;
     }
     
     @autoreleasepool {
+        NSLog(@"Starting fresh initialization...");
+        
         // 初始化Metal
         g_metalDevice = MTLCreateSystemDefaultDevice();
         if (!g_metalDevice) {
@@ -311,19 +334,38 @@ bool HoopsEngine_Initialize(const char* license) {
 #ifdef HOOPS_ENABLED
         // 初始化HOOPS引擎 - 使用构造函数创建World对象
         try {
-            g_hpsWorld = new HPS::World(license);
-            
-            // 设置Exchange库目录 - 使用Frameworks目录
-            NSString* bundlePath = [[NSBundle mainBundle] bundlePath];
-            NSString* frameworksPath = [bundlePath stringByAppendingPathComponent:@"Contents/Frameworks"];
-            g_hpsWorld->SetExchangeLibraryDirectory([frameworksPath UTF8String]);
-            NSLog(@"HOOPS Exchange library path: %@", frameworksPath);
-            
-            NSLog(@"HOOPS World initialized successfully");
+            // 如果World对象已经存在，不要重新创建
+            if (!g_hpsWorld) {
+                NSLog(@"Creating new HPS::World...");
+                g_hpsWorld = new HPS::World(license);
+                
+                // 设置Exchange库目录 - 使用Frameworks目录
+                NSString* bundlePath = [[NSBundle mainBundle] bundlePath];
+                NSString* frameworksPath = [bundlePath stringByAppendingPathComponent:@"Contents/Frameworks"];
+                g_hpsWorld->SetExchangeLibraryDirectory([frameworksPath UTF8String]);
+                NSLog(@"HOOPS Exchange library path: %@", frameworksPath);
+                
+                NSLog(@"HOOPS World initialized successfully");
+            } else {
+                NSLog(@"HOOPS World already exists, reusing existing instance");
+            }
+        } catch (const HPS::InvalidSpecificationException& e) {
+            // 特殊处理 "World object has already been created" 错误
+            NSString* errorStr = [NSString stringWithUTF8String:e.what()];
+            NSLog(@"Caught InvalidSpecificationException: %@", errorStr);
+            if ([errorStr containsString:@"already been created"] || [errorStr containsString:@"World object"]) {
+                NSLog(@"HOOPS World already created externally, continuing...");
+                // 不设置错误，继续执行
+            } else {
+                SetLastError(e.what());
+                return false;
+            }
         } catch (const HPS::Exception& e) {
+            NSLog(@"Caught HPS::Exception: %s", e.what());
             SetLastError(e.what());
             return false;
         } catch (const std::exception& e) {
+            NSLog(@"Caught std::exception: %s", e.what());
             SetLastError(e.what());
             return false;
         }
@@ -333,6 +375,7 @@ bool HoopsEngine_Initialize(const char* license) {
 #endif
         
         g_isInitialized = true;
+        NSLog(@"Initialization completed successfully");
         return true;
     }
 }
@@ -343,10 +386,46 @@ void HoopsEngine_Shutdown(void) {
     @autoreleasepool {
 #ifdef HOOPS_ENABLED
         try {
-            // 删除World对象会自动关闭引擎
+            // 不删除World对象，只清理当前加载的模型
+            if (g_hpsWorld && g_hasModel) {
+                // 清理当前模型
+                g_cadModel = HPS::Exchange::CADModel();
+                g_hasModel = false;
+                g_loadedFileName = nil;
+                
+                // 清空模型字典但保留字典对象
+                if (g_loadedModels) {
+                    [g_loadedModels removeAllObjects];
+                }
+                
+                NSLog(@"HOOPS model cleared, keeping World object alive");
+            }
+        } catch (...) {
+            // 忽略关闭时的错误
+        }
+#endif
+        
+        // 不清理关键资源，保持它们可用
+        // g_pixelBuffer - 保留
+        // g_loadedModels - 保留（已清空内容）
+        // g_metalDevice - 保留
+        // g_commandQueue - 保留
+        
+        NSLog(@"HOOPS engine shutdown completed (resources preserved)");
+    }
+}
+
+void HoopsEngine_FullShutdown(void) {
+    if (!g_isInitialized) return;
+    
+    @autoreleasepool {
+#ifdef HOOPS_ENABLED
+        try {
+            // 完全删除World对象
             if (g_hpsWorld) {
                 delete g_hpsWorld;
                 g_hpsWorld = nullptr;
+                NSLog(@"HOOPS World fully destroyed");
             }
         } catch (...) {
             // 忽略关闭时的错误
@@ -362,11 +441,18 @@ void HoopsEngine_Shutdown(void) {
         g_metalDevice = nil;
         g_commandQueue = nil;
         g_isInitialized = false;
+        
+        NSLog(@"HOOPS engine fully shutdown");
     }
 }
 
 bool HoopsEngine_IsInitialized(void) {
-    return g_isInitialized;
+    // 更可靠的初始化检查：不仅检查标志，还要检查关键资源
+    return g_isInitialized && g_hpsWorld != nullptr;
+}
+
+void* HoopsEngine_GetWorld(void) {
+    return static_cast<void*>(g_hpsWorld);
 }
 
 int HoopsEngine_LoadFile(const char* filePath) {

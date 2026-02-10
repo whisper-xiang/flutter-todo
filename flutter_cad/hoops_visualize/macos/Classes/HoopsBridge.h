@@ -12,7 +12,11 @@ extern "C" {
 // HOOPS引擎初始化和关闭
 bool HoopsEngine_Initialize(const char* license);
 void HoopsEngine_Shutdown(void);
+void HoopsEngine_FullShutdown(void);  // 完全关闭引擎
 bool HoopsEngine_IsInitialized(void);
+
+// 获取全局World对象（用于RenderView）
+void* HoopsEngine_GetWorld(void);
 
 // 文件加载
 int HoopsEngine_LoadFile(const char* filePath);

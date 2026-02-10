@@ -15,51 +15,63 @@ class LocalAssetServer {
   HttpServer? _server;
   int? _port;
   Directory? _tempDir;
+  bool _isStarting = false;
+  bool _isStopping = false;
 
   LocalAssetServer._internal();
 
   Future<void> start() async {
-    if (_server != null) return;
+    if (_server != null || _isStarting) return;
 
-    _tempDir = await getTemporaryDirectory();
-    final webRoot = Directory(p.join(_tempDir!.path, 'assets'));
-    if (await webRoot.exists()) {
-      await webRoot.delete(recursive: true);
-    }
-    await webRoot.create(recursive: true);
+    _isStarting = true;
 
-    // 解压所有 assets/web/ 下的资源到临时目录
-    // 注意：AssetManifest.json 在某些构建模式下可能不可用，或者路径有变化
-    // 这里增加 try-catch 来处理可能的异常，避免应用启动崩溃
     try {
-      final manifestContent = await rootBundle.loadString('AssetManifest.json');
-      final Map<String, dynamic> manifestMap = json.decode(manifestContent);
-      final webAssetKeys = manifestMap.keys.where(
-        (key) => key.startsWith('assets/web/'),
-      );
-
-      for (final key in webAssetKeys) {
-        await _extractFile(key);
+      _tempDir = await getTemporaryDirectory();
+      final webRoot = Directory(p.join(_tempDir!.path, 'assets'));
+      if (await webRoot.exists()) {
+        await webRoot.delete(recursive: true);
       }
+      await webRoot.create(recursive: true);
+
+      // 解压所有 assets/web/ 下的资源到临时目录
+      // 注意：AssetManifest.json 在某些构建模式下可能不可用，或者路径有变化
+      // 这里增加 try-catch 来处理可能的异常，避免应用启动崩溃
+      try {
+        final manifestContent = await rootBundle.loadString(
+          'AssetManifest.json',
+        );
+        final Map<String, dynamic> manifestMap = json.decode(manifestContent);
+        final webAssetKeys = manifestMap.keys.where(
+          (key) => key.startsWith('assets/web/'),
+        );
+
+        for (final key in webAssetKeys) {
+          await _extractFile(key);
+        }
+      } catch (e) {
+        print('Error loading AssetManifest.json or extracting assets: $e');
+      }
+
+      // 无论 Manifest 是否加载成功，都显式尝试加载关键文件
+      // 这可以解决开发过程中 Manifest 未及时更新导致新文件 404 的问题
+      await _extractFile('assets/web/index.html');
+      await _extractFile('assets/web/3d/index.html');
+      await _extractFile('assets/web/3d/1303-5504001-01.ocf4');
+      await _extractFile('assets/web/3d/hoops-web-viewer-monolith.umd.js');
+      await _extractFile('assets/web/3d/main.js');
+
+      var handler = createStaticHandler(
+        _tempDir!.path,
+        defaultDocument: 'index.html',
+      );
+      _server = await io.serve(handler, 'localhost', 0);
+      _port = _server!.port;
+      print('Local asset server started on http://localhost:$_port');
     } catch (e) {
-      print('Error loading AssetManifest.json or extracting assets: $e');
+      print('Error starting local asset server: $e');
+    } finally {
+      _isStarting = false;
     }
-
-    // 无论 Manifest 是否加载成功，都显式尝试加载关键文件
-    // 这可以解决开发过程中 Manifest 未及时更新导致新文件 404 的问题
-    await _extractFile('assets/web/index.html');
-    await _extractFile('assets/web/3d/index.html');
-    await _extractFile('assets/web/3d/1303-5504001-01.ocf4');
-    await _extractFile('assets/web/3d/hoops-web-viewer-monolith.umd.js');
-    await _extractFile('assets/web/3d/main.js');
-
-    var handler = createStaticHandler(
-      _tempDir!.path,
-      defaultDocument: 'index.html',
-    );
-    _server = await io.serve(handler, 'localhost', 0);
-    _port = _server!.port;
-    print('Local asset server started on http://localhost:$_port');
   }
 
   Future<void> _extractFile(String key) async {
@@ -80,10 +92,16 @@ class LocalAssetServer {
   }
 
   void stop() {
+    if (_isStopping) return;
+    _isStopping = true;
+
     _server?.close();
     _server = null;
     _port = null;
     _tempDir?.delete(recursive: true);
+    _tempDir = null;
+
+    _isStopping = false;
     print('Local asset server stopped');
   }
 

@@ -23,6 +23,7 @@ class HoopsNativeView extends StatefulWidget {
 class HoopsNativeViewState extends State<HoopsNativeView> {
   MethodChannel? _channel;
   bool _isInitialized = false;
+  bool _isDisposed = false;
 
   @override
   void didUpdateWidget(HoopsNativeView oldWidget) {
@@ -33,26 +34,34 @@ class HoopsNativeViewState extends State<HoopsNativeView> {
   }
 
   Future<bool> loadFile(String filePath) async {
-    if (_channel == null) return false;
+    if (_channel == null || _isDisposed) return false;
     try {
       final result = await _channel!.invokeMethod<bool>('loadFile', {
         'filePath': filePath,
       });
-      widget.onFileLoaded?.call(result ?? false);
+      if (!_isDisposed) {
+        widget.onFileLoaded?.call(result ?? false);
+      }
       return result ?? false;
     } catch (e) {
       debugPrint('HoopsNativeView loadFile error: $e');
-      widget.onFileLoaded?.call(false);
+      if (!_isDisposed) {
+        widget.onFileLoaded?.call(false);
+      }
       return false;
     }
   }
 
   Future<void> fitView() async {
-    await _channel?.invokeMethod('fitView');
+    if (_channel != null && !_isDisposed) {
+      await _channel?.invokeMethod('fitView');
+    }
   }
 
   Future<void> resetView() async {
-    await _channel?.invokeMethod('resetView');
+    if (_channel != null && !_isDisposed) {
+      await _channel?.invokeMethod('resetView');
+    }
   }
 
   void _onPlatformViewCreated(int viewId) {
@@ -63,20 +72,38 @@ class HoopsNativeViewState extends State<HoopsNativeView> {
   }
 
   Future<void> _initializeView() async {
-    if (_channel == null) return;
+    if (_channel == null || _isDisposed) return;
 
     try {
-      final success = await _channel!.invokeMethod<bool>('initialize', {
-        'license': widget.license,
-      });
+      // 尝试初始化引擎，如果已经初始化会失败但这是正常的
+      try {
+        final success = await _channel!.invokeMethod<bool>('initialize', {
+          'license': widget.license,
+        });
 
-      if (success == true) {
-        _isInitialized = true;
-        widget.onViewCreated?.call();
+        if (success == true && !_isDisposed) {
+          _isInitialized = true;
+          widget.onViewCreated?.call();
 
-        // 如果有初始文件路径，加载它
-        if (widget.filePath != null) {
-          await loadFile(widget.filePath!);
+          // 如果有初始文件路径，加载它
+          if (widget.filePath != null) {
+            await loadFile(widget.filePath!);
+          }
+        }
+      } catch (e) {
+        // 如果初始化失败是因为引擎已经初始化，直接标记为已初始化
+        if (e.toString().contains('already') ||
+            e.toString().contains('World object')) {
+          debugPrint('HOOPS engine already initialized, continuing...');
+          _isInitialized = true;
+          widget.onViewCreated?.call();
+
+          if (widget.filePath != null && !_isDisposed) {
+            await loadFile(widget.filePath!);
+          }
+        } else {
+          // 其他错误，重新抛出
+          rethrow;
         }
       }
     } catch (e) {
@@ -86,7 +113,9 @@ class HoopsNativeViewState extends State<HoopsNativeView> {
 
   @override
   void dispose() {
-    _channel?.invokeMethod('shutdown');
+    _isDisposed = true;
+    // 安全地关闭通道，不调用 shutdown 以避免二次打开时的问题
+    _channel = null;
     super.dispose();
   }
 

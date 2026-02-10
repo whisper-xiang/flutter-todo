@@ -1,5 +1,6 @@
 #import "HoopsRenderView.h"
 #import <Metal/Metal.h>
+#import "HoopsBridge.h"
 
 #include "hps.h"
 #include "sprk.h"
@@ -42,14 +43,23 @@
     }
     
     @try {
-        // 初始化HOOPS World
-        _hpsWorld = new HPS::World([license UTF8String]);
+        // 确保全局引擎已初始化
+        if (!HoopsEngine_IsInitialized()) {
+            if (!HoopsEngine_Initialize([license UTF8String])) {
+                NSLog(@"Failed to initialize global HOOPS engine");
+                return NO;
+            }
+        }
         
-        // 设置Exchange库目录
-        NSString* bundlePath = [[NSBundle mainBundle] bundlePath];
-        NSString* frameworksPath = [bundlePath stringByAppendingPathComponent:@"Contents/Frameworks"];
-        _hpsWorld->SetExchangeLibraryDirectory([frameworksPath UTF8String]);
-        NSLog(@"HOOPS Exchange library path: %@", frameworksPath);
+        // 使用全局World对象
+        void* worldPtr = HoopsEngine_GetWorld();
+        _hpsWorld = static_cast<HPS::World*>(worldPtr);
+        if (!_hpsWorld) {
+            NSLog(@"Failed to get global HOOPS World");
+            return NO;
+        }
+        
+        NSLog(@"Using global HOOPS World for RenderView");
         
         // 创建Canvas - 绑定到当前NSView
         HPS::WindowHandle windowHandle = (HPS::WindowHandle)self;
@@ -88,7 +98,7 @@
             .Push(zoomOp);
         
         _isInitialized = YES;
-        NSLog(@"HOOPS RenderView initialized successfully");
+        NSLog(@"HOOPS RenderView initialized successfully with global World");
         
         return YES;
     } @catch (NSException *exception) {
@@ -109,13 +119,13 @@
             _canvas.Delete();
         }
         
-        if (_hpsWorld) {
-            delete _hpsWorld;
-            _hpsWorld = nullptr;
-        }
+        // 不删除全局World对象，只清空引用
+        _hpsWorld = nullptr;
         
         _isInitialized = NO;
         _hasModel = NO;
+        
+        NSLog(@"HOOPS RenderView shutdown completed (global World preserved)");
     } @catch (NSException *exception) {
         NSLog(@"HOOPS shutdown error: %@", exception.reason);
     }

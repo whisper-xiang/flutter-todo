@@ -62,6 +62,17 @@
         return;
     }
     
+    // 检查引擎是否已经初始化
+    if ([HoopsBridgeWrapper isInitialized]) {
+        // 引擎已初始化，直接返回成功
+        if (!self.isRegistered) {
+            self.textureId = [self.textureRegistry registerTexture:self];
+            self.isRegistered = YES;
+        }
+        result(@(YES));
+        return;
+    }
+    
     BOOL success = [HoopsBridgeWrapper initializeWithLicense:license];
     
     if (success && !self.isRegistered) {
@@ -77,6 +88,7 @@
         [self.textureRegistry unregisterTexture:self.textureId];
         self.isRegistered = NO;
     }
+    // 使用轻量级shutdown，不删除World对象
     [HoopsBridgeWrapper shutdown];
     result(nil);
 }
