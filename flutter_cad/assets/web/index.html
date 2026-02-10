@@ -52,8 +52,8 @@
       const fileUrl = getQueryParam("file");
 
       const CONFIG = {
-        // apiHost: "https://cloud.gstarcad.com",
-        // fileId: "F19A9E840586B0DAB88B7C21556FAA9E",
+        apiHost: "https://cloud.gstarcad.com",
+        fileId: "F19A9E840586B0DAB88B7C21556FAA9E",
         totpSecretKey: "I5JVIQSGTKTQKSK5AV",
         sources: fileUrl
           ? [fileUrl]
@@ -331,14 +331,14 @@
          * 布局切换回调函数
          */
         switchLayoutCB: () => {},
-        // apiHost: CONFIG.apiHost,
+        apiHost: CONFIG.apiHost,
 
         // Optional settings
         mobileSizeLimit: 5242880,
         pcSizeLimit: 12582912,
         mode: "default",
         language: "zh",
-        // apiNameOfSaveAs: "/testsad",
+        apiNameOfSaveAs: "/testsad",
         hideToolbar: false,
         textSearchScale: 1,
         toolbarHideItems: {},
@@ -351,41 +351,41 @@
         //  * @param {Object} noteData - 注释数据
         //  * @returns {boolean} 是否允许选择
         //  */
-        // notesSelectCB: function (noteData) {
-        //   console.log("noteData", noteData);
-        //   localStorage.setItem("note", JSON.stringify(noteData));
-        //   return true;
-        // },
+        notesSelectCB: function (noteData) {
+          console.log("noteData", noteData);
+          localStorage.setItem("note", JSON.stringify(noteData));
+          return true;
+        },
 
         // /**
         //  * 权限检查函数
         //  * @param {string} funcName - 功能名称
         //  * @returns {boolean} 是否有权限
         //  */
-        // hasPermission: (funcName) => {
-        //   const restrictedList = ["print", "noteArrow"];
-        //   return !restrictedList.includes(funcName);
-        // },
+        hasPermission: (funcName) => {
+          const restrictedList = ["print", "noteArrow"];
+          return !restrictedList.includes(funcName);
+        },
       });
 
       // Enable features
-      // gstarSDK.enableZoom(5); // Mouse wheel zoom (speed = 5)
-      // gstarSDK.enablePan(); // Mouse left button/wheel pan
-      // gstarSDK.disableMap(); // Disable minimap
+      gstarSDK.enableZoom(5); // Mouse wheel zoom (speed = 5)
+      gstarSDK.enablePan(); // Mouse left button/wheel pan
+      gstarSDK.disableMap(); // Disable minimap
 
       // Measurement accuracy
-      // gstarSDK.measures.accuracy = 3;
+      gstarSDK.measures.accuracy = 3;
 
       // API configuration
-      // gstarSDK.apiHost = window.location.protocol + "//" + window.location.host;
-      // gstarSDK.apiHeader = {
-      //   Authorization: "xxxxx",
-      //   Myheader: "123123123",
-      // };
+      gstarSDK.apiHost = window.location.protocol + "//" + window.location.host;
+      gstarSDK.apiHeader = {
+        Authorization: "xxxxx",
+        Myheader: "123123123",
+      };
 
       // Custom API endpoints
-      // gstarSDK.apiRename.saveAs = "/saveAsdwg?key=5427&cad=test";
-      // gstarSDK.apiRename.saveAsPdf = "/saveAsPdf?key=5427&cad=test";
+      gstarSDK.apiRename.saveAs = "/saveAsdwg?key=5427&cad=test";
+      gstarSDK.apiRename.saveAsPdf = "/saveAsPdf?key=5427&cad=test";
 
       // ========================================
       // Event Handlers

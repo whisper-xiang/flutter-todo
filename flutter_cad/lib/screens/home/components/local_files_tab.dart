@@ -406,9 +406,6 @@ class _LocalFilesTabState extends State<LocalFilesTab>
                 case 'app_storage':
                   _accessAppStorage();
                   break;
-                case 'local_files':
-                  context.push('/local');
-                  break;
                 case 'refresh':
                   _loadRecentFiles();
                   break;
@@ -422,16 +419,6 @@ class _LocalFilesTabState extends State<LocalFilesTab>
                     Icon(Icons.folder, color: Colors.green),
                     SizedBox(width: 8),
                     Text('App存储'),
-                  ],
-                ),
-              ),
-              const PopupMenuItem(
-                value: 'local_files',
-                child: Row(
-                  children: [
-                    Icon(Icons.storage, color: Colors.orange),
-                    SizedBox(width: 8),
-                    Text('本地文件管理'),
                   ],
                 ),
               ),
@@ -498,8 +485,8 @@ class _LocalFilesTabState extends State<LocalFilesTab>
             Text('已按文件类型去重显示', style: TextStyle(color: Colors.grey)),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: () => context.push('/local'),
-              child: const Text('管理本地文件'),
+              onPressed: _accessAppStorage,
+              child: const Text('访问App存储'),
             ),
           ],
         ),

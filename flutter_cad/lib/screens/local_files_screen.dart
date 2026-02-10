@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:path/path.dart' as path;
 import '../services/file_storage_service.dart';
-import '../services/assets_file_service.dart';
+import '../services/system_file_service.dart';
 import '../models/cad_file.dart';
 
 class LocalFilesScreen extends StatefulWidget {
@@ -13,40 +13,118 @@ class LocalFilesScreen extends StatefulWidget {
   State<LocalFilesScreen> createState() => _LocalFilesScreenState();
 }
 
-class _LocalFilesScreenState extends State<LocalFilesScreen> {
+class _LocalFilesScreenState extends State<LocalFilesScreen>
+    with SingleTickerProviderStateMixin {
   final FileStorageService _storageService = FileStorageService.instance;
-  List<File> _localDrawings = [];
+  final SystemFileService _systemFileService = SystemFileService();
+  List<StorageDirectory> _storageDirectories = [];
+  List<File> _currentFiles = [];
+  StorageDirectory? _selectedDirectory;
   bool _isLoading = false;
+  bool _isLoadingFiles = false;
   Map<String, int>? _storageInfo;
+  late TabController _tabController;
+
+  // 支持的文件扩展名
+  static const List<String> _supportedExtensions = [
+    // CAD文件
+    'dwg', 'dxf', 'ocf', 'ocf4', 'sldprt', 'step', 'stp',
+    'iges', 'igs', 'hsf', 'obj',
+    // 文档文件
+    'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx',
+    'txt', 'csv',
+    // 图片文件
+    'jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg', 'ico', 'tiff',
+    // 音频文件
+    'mp3', 'wav', 'aac', 'ogg', 'm4a',
+    // 视频文件
+    'mp4', 'avi', 'mov', 'wmv', 'webm', 'mkv',
+  ];
 
   @override
   void initState() {
     super.initState();
-    _loadLocalDrawings();
+    _tabController = TabController(length: 2, vsync: this);
+    _loadStorageDirectories();
     _loadStorageInfo();
   }
 
-  Future<void> _loadLocalDrawings() async {
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadStorageDirectories() async {
     if (!mounted) return;
 
     setState(() => _isLoading = true);
     try {
-      // 只加载assets中的文件
-      final assetsFiles = await AssetsFileService().initializeTestFiles();
-      
+      final directories = await _systemFileService.getStorageDirectories();
+
+      // 加载每个目录的信息
+      for (final dir in directories) {
+        await dir.loadInfo();
+      }
+
       if (mounted) {
         setState(() {
-          _localDrawings = assetsFiles;
+          _storageDirectories = directories;
           _isLoading = false;
         });
-        debugPrint('Assets文件数量: ${assetsFiles.length}');
+        debugPrint('找到 ${directories.length} 个存储目录');
       }
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('加载Assets文件失败: $e')));
+        ).showSnackBar(SnackBar(content: Text('加载存储目录失败: $e')));
+      }
+    }
+  }
+
+  Future<void> _loadFilesInDirectory(StorageDirectory directory) async {
+    if (!mounted) return;
+
+    setState(() => _isLoadingFiles = true);
+    try {
+      // 检查权限
+      if (directory.requiresPermission) {
+        final hasPermission = await _systemFileService.checkStoragePermission();
+        if (!hasPermission) {
+          if (mounted) {
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(const SnackBar(content: Text('需要存储权限才能访问此目录')));
+          }
+          setState(() => _isLoadingFiles = false);
+          return;
+        }
+      }
+
+      final files = await _systemFileService.getFilesInDirectory(
+        directory.path,
+        allowedExtensions: _supportedExtensions,
+      );
+
+      // 过滤出只有File对象
+      final fileList = files.whereType<File>().toList();
+
+      if (mounted) {
+        setState(() {
+          _selectedDirectory = directory;
+          _currentFiles = fileList;
+          _isLoadingFiles = false;
+        });
+        debugPrint('在 ${directory.name} 中找到 ${fileList.length} 个文件');
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoadingFiles = false);
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('加载文件失败: $e')));
       }
     }
   }
@@ -190,7 +268,10 @@ class _LocalFilesScreenState extends State<LocalFilesScreen> {
                       children: [
                         Icon(Icons.folder_open, size: 64, color: Colors.grey),
                         SizedBox(height: 16),
-                        Text('暂无Assets文件', style: TextStyle(color: Colors.grey)),
+                        Text(
+                          '暂无Assets文件',
+                          style: TextStyle(color: Colors.grey),
+                        ),
                         SizedBox(height: 8),
                         Text(
                           '点击刷新按钮重新加载文件',

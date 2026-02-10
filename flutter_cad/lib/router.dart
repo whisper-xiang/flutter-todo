@@ -14,7 +14,7 @@ import 'screens/login_screen.dart';
 // import 'screens/home_screen.dart'
 import 'screens/home/index.dart';
 import 'screens/cloud_files_screen.dart';
-import 'screens/local_files_screen.dart';
+// import 'screens/local_files_screen.dart';  // 已移除本地文件管理功能
 import 'screens/preview_screen.dart';
 import 'screens/native_preview_screen.dart';
 import 'screens/hoops_preview_screen.dart';
@@ -53,11 +53,6 @@ final router = GoRouter(
     GoRoute(
       path: '/home',
       pageBuilder: (context, state) => CupertinoPage(child: const HomeScreen()),
-    ),
-    GoRoute(
-      path: '/local',
-      pageBuilder: (context, state) =>
-          CupertinoPage(child: const LocalFilesScreen()),
     ),
     GoRoute(
       path: '/cloud',
