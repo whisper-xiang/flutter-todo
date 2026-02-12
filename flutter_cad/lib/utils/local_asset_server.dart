@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
@@ -40,7 +41,7 @@ class LocalAssetServer {
         await _extractFile(key);
       }
     } catch (e) {
-       print('Error loading AssetManifest.json or extracting assets: $e');
+      debugPrint('Error loading AssetManifest.json or extracting assets: $e');
     }
     
     // 无论 Manifest 是否加载成功，都显式尝试加载关键文件
@@ -49,15 +50,15 @@ class LocalAssetServer {
     await _extractFile('assets/web/GStarSDK.js');
     await _extractFile('assets/web/3d/index.html');
     await _extractFile('assets/web/3d/1303-5504001-01.ocf4');
-    await _extractFile('assets/web/3d/hoops-web-viewer-monolith.umd.js');
-    await _extractFile('assets/web/3d/main.js');
+    await _extractFile('assets/web/3d/web-viewer-monolith.umd.js');
+    await _extractFile('assets/web/3d/view3d-h5.umd.js');
 
     var handler = createStaticHandler(_tempDir!.path, defaultDocument: 'index.html');
     
     // 使用 loopbackIPv4 (127.0.0.1) 而不是 'localhost'，在某些 Android 设备上更稳定
     _server = await io.serve(handler, InternetAddress.loopbackIPv4, 0);
     _port = _server!.port;
-    print('Local asset server started on http://127.0.0.1:$_port');
+    debugPrint('Local asset server started on http://127.0.0.1:$_port');
   }
   
   Future<void> _extractFile(String key) async {
@@ -70,10 +71,9 @@ class LocalAssetServer {
           await file.parent.create(recursive: true);
       }
       await file.writeAsBytes(byteData.buffer.asUint8List());
-      print('Successfully extracted: $key');
     } catch (e) {
       // 忽略文件不存在的错误，避免日志刷屏，但在调试时可能有用
-      print('Failed to extract $key: $e');
+      debugPrint('Failed to extract $key: $e');
     }
   }
 
@@ -82,7 +82,7 @@ class LocalAssetServer {
     _server = null;
     _port = null;
     _tempDir?.delete(recursive: true);
-    print('Local asset server stopped');
+    debugPrint('Local asset server stopped');
   }
 
   String? getAssetsUrl({String host = '127.0.0.1'}) =>
@@ -96,7 +96,7 @@ class LocalAssetServer {
     try {
       final file = File(filePath);
       if (!await file.exists()) {
-        print('Error: Source file does not exist at $filePath');
+        debugPrint('Error: Source file does not exist at $filePath');
         return null;
       }
 
@@ -119,15 +119,13 @@ class LocalAssetServer {
 
       // 再次验证目标文件是否存在
       if (await targetFile.exists()) {
-        print(
-            'Successfully serving file at: http://$host:$_port/assets/web/files/$uniqueName');
         return 'http://$host:$_port/assets/web/files/$uniqueName';
       } else {
-        print('Error: Target file failed to be created at $targetPath');
+        debugPrint('Error: Target file failed to be created at $targetPath');
         return null;
       }
     } catch (e) {
-      print('Error serving file: $e');
+      debugPrint('Error serving file: $e');
       return null;
     }
   }

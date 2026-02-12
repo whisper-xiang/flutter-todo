@@ -2,125 +2,274 @@
 <html lang="en">
 
 <head>
-  <meta charset="utf-8" />
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.png" />
   <meta name="viewport"
-    content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover" />
-  <meta name="theme-color" content="#000000" />
-  <title>3D Demo View</title>
-  <script src="./hoops-web-viewer-monolith.umd.js"></script>
-  <script defer="defer" src="./main.js"></script>
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, viewport-fit=cover, user-scalable=no" />
+  <title><%- title %></title>
+  <!-- <script src="./vconsole.min.js"></script> -->
+  <script src="./web-viewer-monolith.umd.js"></script>
+  <script src="./view3d-h5.umd.js"></script>
 </head>
-<style>
-  #root {
-    height: 100%;
-    box-sizing: border-box;
-    padding-bottom: constant(safe-area-inset-bottom);
-    padding-bottom: env(safe-area-inset-bottom);
-  }
-</style>
 
 <body>
-  <div id="root"></div>
-  <script>
+  <div id="app"></div>
+  <script type="module">
+    const svg = `
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="#ffa502"/>
+</svg>
+`
+
+    const loaclNotes = [
+      {
+        childNotes: [],
+        nid: 'note-0f318749-b6ba-4900-b343-a9e8638ffa3e',
+        userId: '1',
+        pointId: 0,
+        text: '666',
+        noteVersion: 1,
+        viewport:
+          '{"viewState":{"position":{"x":192.02320075645815,"y":174.65127456676737,"z":199.1469076932939},"target":{"x":2.87628173828125,"y":-14.464896202087402,"z":10},"up":{"x":-0.40820405103009644,"y":0.8165408167662147,"z":-0.408204051030096},"width":131.03772629912586,"height":131.03772629912586,"projection":1,"nearLimit":0.01,"className":"Communicator.Camera"},"explode":{"direction":"center","level":1,"progress":0,"isActive":false},"commentPointInfo":{"indexEntityId":11,"isIntersectEntity":true,"offsetPos":{"x":51.551876068115234,"y":25.013316052920494,"z":-10}}}',
+        position: '-48.675594329833984,-39.47821044921875,20',
+        createTime: 1744793011678,
+        modifyTime: 1744793011678,
+        activeCadConfiguration: '3',
+        state: 1,
+        creatorName: 'admin'
+      },
+      {
+        childNotes: [],
+        nid: 'note-2b50e768-b4dc-415e-8b55-5feecbed27dc',
+        userId: '1',
+        pointId: 0,
+        text: '444',
+        noteVersion: 1,
+        viewport:
+          '{"viewState":{"position":{"x":211.38861181263675,"y":194.0135375278542,"z":240.5123175899981},"target":{"x":2.87628173828125,"y":-14.464896202087402,"z":32},"up":{"x":-0.4082040510300965,"y":0.8165408167662148,"z":-0.40820405103009605},"width":144.45374939282337,"height":144.45374939282337,"projection":1,"nearLimit":0.01,"className":"Communicator.Camera"},"explode":{"direction":"center","level":1,"progress":0,"isActive":false},"commentPointInfo":{"indexEntityId":7,"isIntersectEntity":true,"offsetPos":{"x":-51.55187994679363,"y":27.77713004673933,"z":-12.484198993548489}}}',
+        position: '54.42816162109375,-42.242027282714844,44.48419952392578',
+        createTime: 1744793004564,
+        modifyTime: 1744793004564,
+        activeCadConfiguration: '2',
+        state: 1,
+        creatorName: 'admin'
+      }
+    ]
+    // eruda.init()
+    // import GStar3DViewer from '/src/hoops/index.ts'
+    // ----------------- 函数拆分 -----------------
     async function loadConfigJson() {
       try {
-        const e = await fetch("./config.json");
-        return await e.json();
-      } catch (e) {
-        return (
-          console.warn("未找到 config.json 或解析失败，使用默认配置"),
-          {
-            cdnSource: './1303-5504001-01.ocf4',
-          }
-        );
+        const res = await fetch('./config.json')
+        return await res.json()
+      } catch (err) {
+        console.warn('未找到 config.json 或解析失败，使用默认配置')
+        return {
+          mode: 'client',
+          root: '',
+          source: '1303-5504001-01.ocf4',
+          wsUrl: '',
+          cdnSource: './1303-5504001-01.ocf4',
+        }
       }
     }
+
     async function getConfig() {
-      const e = new URLSearchParams(window.location.search);
-      let n = await loadConfigJson();
-      return ((n = { ...n, ...Object.fromEntries(e) }), n);
+      const urlParams = new URLSearchParams(window.location.search)
+      let config = await loadConfigJson() // 读取 config.json
+      config = { ...config, ...Object.fromEntries(urlParams) } // URL 参数优先覆盖 config.json
+      return config
     }
-    function getRenderMode(e) {
-      switch (e) {
-        case "client":
+
+    function getRenderMode(modeStr) {
+      switch (modeStr) {
+        case 'client':
+          return 0
+        case 'server':
+          return 1
         default:
-          return 0;
-        case "server":
-          return 1;
+          return 0
       }
     }
-    function getFileConfig(e, n) {
-      if (e.file) return { filePath: e.file };
-      if (e.cdnSource) return { filePath: e.cdnSource };
+
+    function getFileConfig(config, renderMode) {
+      if (config.file) {
+        return { filePath: config.file }
+      }
+      if (config.cdnSource) {
+        return { filePath: config.cdnSource }
+      }
+      const rootPath = `./${config.root || 'scs'}/`
+      const fileName = config.source || '齿轮泵装配示例图.scs'
+      let wsUrl = config.wsUrl || undefined
+      if (renderMode === 'server') wsUrl = `ws://${wsUrl || '172.16.50.70'}:11182?renderingLocation=ssr`
+      return { filePath: `${rootPath}${fileName}`, wsUrl }
     }
-    function initViewer() {
-      return (window.wcad = new WebCAD({ wrapId: "root" }));
+
+    function initViewer(filePath, renderMode, wsUrl) {
+      const viewer = new window.GStar3DViewer('app', {
+        originFormat: 'rvt2',
+        // languagePath: 'https://static-offline-cn.51ake.com/web-cn/test/gstar-web-site/static/js/view3d/lang/h5/vi.json',
+        language: 'zh',
+        // languageInfo: langJson,
+        // treeLanguageInfo: treeJson,
+        measureGifPath: 'https://static-offline-cn.51ake.com/web-cn/dev/demo/hoops-h5/measure-guide.gif',
+        paymentIconBtns: ['-1'],
+        supportFuncBtns: ['-1'],
+        // theme: 'blue',
+        customBtns: {
+          topBar: [
+            {
+              id: 'ShowFileInfo',
+              svg: svg,
+              // label: '文件信息',
+              onClick: function () {
+                const actionList = [
+                  // {
+                  //   type: 'viewRotate',
+                  //   params: {
+                  //     angle: 90
+                  //   }
+                  // },
+                  // { type: 'viewDir', params: 'Front' },
+                  // { type: 'viewDir', params: 'Left' },
+                  // { type: 'viewDir', params: 'Iso' },
+                  {
+                    type: 'viewCut',
+                    params: [
+                      {
+                        axis: 'xCut',
+                        from: 0,
+                        to: 50
+                      },
+                      {
+                        axis: 'yCut',
+                        from: 0,
+                        to: 50
+                      },
+                      {
+                        axis: 'zCut',
+                        from: 0,
+                        to: 50
+                      },
+                      {
+                        axis: 'xCut',
+                        from: 0,
+                        to: 0
+                      },
+                      {
+                        axis: 'yCut',
+                        from: 50,
+                        to: 0
+                      },
+                      {
+                        axis: 'zCut',
+                        from: 50,
+                        to: 0
+                      }
+                    ]
+                  },
+                  {
+                    type: 'viewExplore',
+                    params: [
+                      {
+                        from: 0,
+                        to: 100
+                      },
+                      {
+                        from: 100,
+                        to: 0
+                      }
+                    ]
+                  },
+                  // { type: 'viewFreeColor' },
+                  // { type: 'viewFreeColor', params: false },
+                  { type: 'viewReset' }
+                ]
+
+                let recordTime = Date.now()
+                wcad.recorderManager?.run(actionList).then(res => {
+                  recordTime = Date.now() - recordTime
+                  console.log('录制时长: ', recordTime / 1000, '秒')
+                  wcad.recorderManager?.play(res.arrayBuffer)
+                })
+              }
+            }
+          ]
+        },
+        viewConfig: {
+          endpointUri: filePath
+        }
+      })
+      window.wcad = viewer
+      return viewer
     }
-    function renderModel(e, n, t, o) {
-      let r = !1;
-      r ||
-        ((r = !0),
-          e
-            .render({
-              fileSource: n,
-              renderMode: t,
-              wsUri: o,
-              getSubsection: (e) => n.replace(/[^/]+$/, "") + e,
-            })
-            .then(() => {
-              (console.log("渲染完成"), (e.note.mode = "replace"), (r = !1));
-            })
-            .catch((e) => {
-              (console.error("渲染出错: ", e),
-                alert("渲染出错,请检查文件是否正确"),
-                (r = !1));
-            }));
-    }
-    function bindFileInput(e) {
-      document.getElementById("fileInput").onchange = (n) => {
-        const t = n.target.files[0];
-        if (!t) return;
-        if (!t.name.endsWith(".ocf4")) return void alert("仅支持 .ocf4 文件");
-        const o = new FileReader();
-        (o.readAsArrayBuffer(t),
-          (o.onload = async () => {
-            const n = getRenderMode((await getConfig()).mode);
-            e.render({ fileSource: o.result, renderMode: n });
-          }));
-      };
-    }
-    function handleNoteChange(e) {
-      const { action: n, data: t, cb: o } = e;
-      switch (n) {
-        case "add":
-        case "edit":
-          o &&
-            o({
-              ...t,
-              creatorName: "张三" + Math.floor(100 * Math.random()),
-            });
-          break;
-        case "delete":
-          o && o();
+    window.onload = async () => {
+      try {
+        // var vConsole = new VConsole()
+        const config = await getConfig()
+        const renderMode = getRenderMode(config.mode)
+        const { filePath, wsUrl } = getFileConfig(config, config.mode)
+
+        const viewer = initViewer(filePath, renderMode, wsUrl)
+
+        viewer.eventManager.registerCallback('close', () => {
+          alert('页面回调：触发close')
+        })
+        viewer.eventManager.registerCallback('beforeRender', e => {
+          console.log('%c%s', 'color: #00258c', 'beforeRender', e)
+        })
+        viewer.eventManager.registerCallback('afterRender', e => {
+          console.log('%c%s', 'color: #00258c', 'afterRender', e)
+          // viewer.noteManager.create(loaclNotes)
+        })
+        viewer.updateOptions({
+          paymentIconBtns: [],
+          supportFuncBtns: []
+        })
+        viewer.eventManager.registerCallback('note.change', params => {
+          const { action, data, cb, finallyCallBack } = params
+          switch (action) {
+            case 'add':
+            case 'edit':
+              cb && cb({ ...data, creatorName: '张三' + Math.floor(Math.random() * 100) })
+              break
+            case 'delete':
+              cb && cb()
+              break
+            default:
+              break
+          }
+          finallyCallBack && finallyCallBack()
+        })
+        async function handleEvent(params) {
+          console.log('页面回调：触发click.menu', params)
+          if (params.eventName.includes('btn-Measure-')) {
+            return await new Promise(resolve => setTimeout(() => resolve(false), 100))
+
+            //   return new Promise((resolve, reject) => {
+            //     viewer.UIManager.ConfirmDialog({
+            //       title: '确认',
+            //       content: '确认吗？',
+            //       cancelButtonText: '取消取消',
+            //       confirmButtonText: '确认雀雀',
+            //       onConfirm: () => {
+            //         console.log('确认')
+            //         resolve(true)
+            //       },
+            //       onCancel: () => {
+            //         console.log('取消')
+            //         resolve(true)
+            //       }
+            //     })
+            //   })
+          }
+        }
+        viewer.eventManager.registerCallback('click.menu', handleEvent)
+      } catch (error) {
+        console.error('初始化失败', error)
       }
     }
-    (document.addEventListener(
-      "wheel",
-      function (e) {
-        e.ctrlKey && e.preventDefault();
-      },
-      { passive: !1 },
-    ),
-      (window.onload = async () => {
-        const e = await getConfig(),
-          n = getRenderMode(e.mode),
-          { filePath: t, wsUrl: o } = getFileConfig(e, e.mode),
-          r = initViewer();
-        (r.init({}).then(() => {
-          (renderModel(r, t, n, o), bindFileInput(r));
-        }),
-          r.note.on("change", handleNoteChange));
-      }));
   </script>
 </body>
 

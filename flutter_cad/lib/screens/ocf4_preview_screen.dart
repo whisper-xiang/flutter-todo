@@ -35,10 +35,10 @@ class _Ocf4PreviewScreenState extends State<Ocf4PreviewScreen> {
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageStarted: (String url) {
-            debugPrint('开始加载: $url');
+            debugPrint('Page started loading: $url');
           },
           onPageFinished: (String url) {
-            debugPrint('加载完成: $url');
+            debugPrint('Page finished loading: $url');
             if (mounted) {
               setState(() {
                 _isLoading = false;
@@ -107,28 +107,6 @@ class _Ocf4PreviewScreenState extends State<Ocf4PreviewScreen> {
       String url = '$serverUrl/3d/index.html';
       if (ocfUrl != null) {
         url += '?file=${Uri.encodeComponent(ocfUrl)}';
-      }
-
-      debugPrint('【Ocf4PreviewScreen】加载 URL: $url');
-
-      if (mounted) {
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('DEBUG: OCF4 URL'),
-            content: SingleChildScrollView(
-              child: SelectableText(
-                'URL: $url\n\nFile Path: ${widget.file.path}\nName: ${widget.file.name}',
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('确定'),
-              ),
-            ],
-          ),
-        );
       }
 
       await _controller.loadRequest(Uri.parse(url));
