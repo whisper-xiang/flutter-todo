@@ -15,65 +15,51 @@ class LocalAssetServer {
   HttpServer? _server;
   int? _port;
   Directory? _tempDir;
-  bool _isStarting = false;
-  bool _isStopping = false;
 
   LocalAssetServer._internal();
 
   Future<void> start() async {
-    if (_server != null || _isStarting) return;
+    if (_server != null) return;
 
-    _isStarting = true;
-
-    try {
-      _tempDir = await getTemporaryDirectory();
-      final webRoot = Directory(p.join(_tempDir!.path, 'assets'));
-      if (await webRoot.exists()) {
-        await webRoot.delete(recursive: true);
-      }
-      await webRoot.create(recursive: true);
-
-      // 解压所有 assets/web/ 下的资源到临时目录
-      // 注意：AssetManifest.json 在某些构建模式下可能不可用，或者路径有变化
-      // 这里增加 try-catch 来处理可能的异常，避免应用启动崩溃
-      try {
-        final manifestContent = await rootBundle.loadString(
-          'AssetManifest.json',
-        );
-        final Map<String, dynamic> manifestMap = json.decode(manifestContent);
-        final webAssetKeys = manifestMap.keys.where(
-          (key) => key.startsWith('assets/web/'),
-        );
-
-        for (final key in webAssetKeys) {
-          await _extractFile(key);
-        }
-      } catch (e) {
-        print('Error loading AssetManifest.json or extracting assets: $e');
-      }
-
-      // 无论 Manifest 是否加载成功，都显式尝试加载关键文件
-      // 这可以解决开发过程中 Manifest 未及时更新导致新文件 404 的问题
-      await _extractFile('assets/web/index.html');
-      await _extractFile('assets/web/3d/index.html');
-      await _extractFile('assets/web/3d/1303-5504001-01.ocf4');
-      await _extractFile('assets/web/3d/hoops-web-viewer-monolith.umd.js');
-      await _extractFile('assets/web/3d/main.js');
-
-      var handler = createStaticHandler(
-        _tempDir!.path,
-        defaultDocument: 'index.html',
-      );
-      _server = await io.serve(handler, 'localhost', 0);
-      _port = _server!.port;
-      print('Local asset server started on http://localhost:$_port');
-    } catch (e) {
-      print('Error starting local asset server: $e');
-    } finally {
-      _isStarting = false;
+    _tempDir = await getTemporaryDirectory();
+    final webRoot = Directory(p.join(_tempDir!.path, 'assets'));
+    if (await webRoot.exists()) {
+      await webRoot.delete(recursive: true);
     }
-  }
+    await webRoot.create(recursive: true);
 
+    // 解压所有 assets/web/ 下的资源到临时目录
+    // 注意：AssetManifest.json 在某些构建模式下可能不可用，或者路径有变化
+    // 这里增加 try-catch 来处理可能的异常，避免应用启动崩溃
+    try {
+      final manifestContent = await rootBundle.loadString('AssetManifest.json');
+      final Map<String, dynamic> manifestMap = json.decode(manifestContent);
+      final webAssetKeys = manifestMap.keys.where((key) => key.startsWith('assets/web/'));
+
+      for (final key in webAssetKeys) {
+        await _extractFile(key);
+      }
+    } catch (e) {
+       print('Error loading AssetManifest.json or extracting assets: $e');
+    }
+    
+    // 无论 Manifest 是否加载成功，都显式尝试加载关键文件
+    // 这可以解决开发过程中 Manifest 未及时更新导致新文件 404 的问题
+    await _extractFile('assets/web/index.html');
+    await _extractFile('assets/web/GStarSDK.js');
+    await _extractFile('assets/web/3d/index.html');
+    await _extractFile('assets/web/3d/1303-5504001-01.ocf4');
+    await _extractFile('assets/web/3d/hoops-web-viewer-monolith.umd.js');
+    await _extractFile('assets/web/3d/main.js');
+
+    var handler = createStaticHandler(_tempDir!.path, defaultDocument: 'index.html');
+    
+    // 使用 loopbackIPv4 (127.0.0.1) 而不是 'localhost'，在某些 Android 设备上更稳定
+    _server = await io.serve(handler, InternetAddress.loopbackIPv4, 0);
+    _port = _server!.port;
+    print('Local asset server started on http://127.0.0.1:$_port');
+  }
+  
   Future<void> _extractFile(String key) async {
     try {
       // 尝试加载资源
@@ -81,7 +67,7 @@ class LocalAssetServer {
       final filePath = p.join(_tempDir!.path, key);
       final file = File(filePath);
       if (!await file.parent.exists()) {
-        await file.parent.create(recursive: true);
+          await file.parent.create(recursive: true);
       }
       await file.writeAsBytes(byteData.buffer.asUint8List());
       print('Successfully extracted: $key');
@@ -92,29 +78,27 @@ class LocalAssetServer {
   }
 
   void stop() {
-    if (_isStopping) return;
-    _isStopping = true;
-
     _server?.close();
     _server = null;
     _port = null;
     _tempDir?.delete(recursive: true);
-    _tempDir = null;
-
-    _isStopping = false;
     print('Local asset server stopped');
   }
 
-  String? get a_s_s_e_t_s_url =>
-      _port != null ? 'http://localhost:$_port/assets/web' : null;
+  String? getAssetsUrl({String host = '127.0.0.1'}) =>
+      _port != null ? 'http://$host:$_port/assets/web' : null;
 
   /// 将本地文件复制到服务器目录并返回可访问的 URL
-  Future<String?> serveFile(String filePath, {String? fileName}) async {
+  Future<String?> serveFile(String filePath,
+      {String? fileName, String host = '127.0.0.1'}) async {
     if (_port == null || _tempDir == null) return null;
 
     try {
       final file = File(filePath);
-      if (!await file.exists()) return null;
+      if (!await file.exists()) {
+        print('Error: Source file does not exist at $filePath');
+        return null;
+      }
 
       // 如果未提供文件名，则使用源文件名
       final effectiveFileName = fileName ?? p.basename(filePath);
@@ -123,13 +107,8 @@ class LocalAssetServer {
           '${DateTime.now().millisecondsSinceEpoch}_$effectiveFileName';
 
       // 复制到 assets/web/files 目录
-      final targetPath = p.join(
-        _tempDir!.path,
-        'assets',
-        'web',
-        'files',
-        uniqueName,
-      );
+      final targetPath =
+          p.join(_tempDir!.path, 'assets', 'web', 'files', uniqueName);
       final targetFile = File(targetPath);
 
       if (!await targetFile.parent.exists()) {
@@ -138,7 +117,15 @@ class LocalAssetServer {
 
       await file.copy(targetPath);
 
-      return 'http://localhost:$_port/assets/web/files/$uniqueName';
+      // 再次验证目标文件是否存在
+      if (await targetFile.exists()) {
+        print(
+            'Successfully serving file at: http://$host:$_port/assets/web/files/$uniqueName');
+        return 'http://$host:$_port/assets/web/files/$uniqueName';
+      } else {
+        print('Error: Target file failed to be created at $targetPath');
+        return null;
+      }
     } catch (e) {
       print('Error serving file: $e');
       return null;

@@ -64,12 +64,12 @@ dependencies:
   excel: ^4.0.6
   app_settings: ^7.0.0
   screen_brightness: ^2.1.7
+  shelf: ^1.4.1
+  shelf_static: ^1.1.2
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  shelf: ^1.4.1
-  shelf_static: ^1.1.2
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
